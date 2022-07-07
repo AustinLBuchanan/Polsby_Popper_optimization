@@ -115,20 +115,20 @@ def add_shir_constraints(m, DG):
 
 def add_scf_constraints(m, DG):
     
-    # compute big M
-    M = most_possible_nodes_in_one_district(DG) - 1
+    # for big M
+    most = most_possible_nodes_in_one_district(DG) 
     
     # Add flow variables: f[u,v] = amount of flow sent across arc uv 
     #  Flows are sent across arcs of DG
-    f = m.addVars( DG.edges )
+    m._f = m.addVars( DG.edges )
 
     # if not a root, consume some flow.
     # if a root, only send out (so much) flow.
-    m.addConstrs( gp.quicksum( f[j,i] - f[i,j] for j in DG.neighbors(i) ) 
-                 >= 1 - M * gp.quicksum( m._r[i,j] for j in range(DG._k) ) for i in DG.nodes )
+    m.addConstrs( gp.quicksum( m._f[v,u] - m._f[u,v] for v in DG.neighbors(u) ) 
+                 >= 1 - ( most ) * gp.quicksum( m._r[u,j] for j in range(DG._k) ) for u in DG.nodes )
 
     # do not send flow across cut edges
-    m.addConstrs( f[u,v] + f[v,u] <= M * ( 1 - gp.quicksum( m._y[u,v,j] for j in range(DG._k) ) ) for u,v in DG.edges )
+    m.addConstrs( m._f[u,v] + m._f[v,u] <= ( most - 1 ) * ( 1 - gp.quicksum( m._y[u,v,j] for j in range(DG._k) ) ) for u,v in DG.edges )
 
     m.update()
     return

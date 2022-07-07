@@ -53,4 +53,43 @@ def add_partitioning_orbitope_constraints(m, DG):
     m.update()
     return
     
+def inject_warm_start(m, DG, heuristic_labeling):
     
+    root = { j : -1 for j in range(DG._k) }
+    for i in DG._ordering:
+        for j in range(DG._k):
+            m._x[i,j].start = 0
+            m._r[i,j].start = 0
+            
+    for u,v in DG.edges:
+        for j in range(DG._k):
+            m._y[u,v,j].start = 0
+    
+    for i in DG._ordering:
+        j = heuristic_labeling[i]
+        m._x[i,j].start = 1
+        if root[j] == -1:
+            root[j] = i
+            m._r[i,j].start = 1
+    
+    for u,v in DG.edges:
+        j = heuristic_labeling[u]
+        if heuristic_labeling[v] != j:
+            m._y[u,v,j].start = 1
+    
+#     if contiguity == 'scf':
+        
+#         #f[u,v]=0 when u and v belong to different districts
+#         for u,v in DG.edges:
+#             if heuristic_labeling[u] != heuristic_labeling[v]:
+#                 m._f[u,v].start = 0
+        
+#         # pick a spanning tree of G[district]. other edges have f[u,v]=0
+#         for j in range(DG._k):
+#             district = [ i for i in DG.nodes if heuristic_labeling[i] == j ]
+#             tree_edges = list( nx.dfs_edges(DG.subgraph(district), source=root[j]) ) 
+#             for u in district:
+#                 for v in DG.neighbors(u):
+#                     if v in district and (u,v) not in tree_edges:
+#                         m._f[u,v].start = 0
+    return

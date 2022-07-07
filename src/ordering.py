@@ -10,6 +10,7 @@ def find_ordering(DG, B):
     return [ v for (v,p) in V_B_with_population ] + B
 
 def solve_maxB_problem(DG):
+    print("Solving the max B problem (as MIP) for use in the vertex ordering...") 
     m = gp.Model()
     m.params.LogToConsole = 0 # keep log to a minimum
     q = DG._k

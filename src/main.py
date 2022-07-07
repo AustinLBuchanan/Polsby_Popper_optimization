@@ -4,7 +4,7 @@ from datetime import date
 import networkx as nx
 import gurobipy as gp
 import os, sys, math, csv
-import export, ordering
+import export, ordering, hess
 import mip, mip_contiguity, mip_objective, mip_fixing
 datapath = '..\\districting-data-2020\\'
 
@@ -29,7 +29,7 @@ def main():
     summary_csv = export_filepath + 'summary.csv'
     my_fieldnames = ['state','level','objective','contiguity'] # arguments
     my_fieldnames += ['k','L','U','n','m'] # params
-    my_fieldnames += ['B_size', 'B_time'] # max B info
+    my_fieldnames += ['B_size', 'B_time', 'heur_time'] # max B and heuristic info
     my_fieldnames += ['MIP_obj','MIP_bound','MIP_time', 'MIP_status', 'MIP_nodes', 'callbacks', 'lazy_cuts'] # MIP info
     
     # if results directory and csv file doesn't exist yet, then create them
@@ -47,6 +47,8 @@ def main():
     filename = state + '_' + level + '.json'
     G = Graph.from_json( datapath + filename )
     DG = nx.DiGraph(G) # directed version of G
+    DG._state = state
+    DG._level = level
     for node in DG.nodes:
         DG.nodes[node]['TOTPOP'] = G.nodes[node]['P0010001']
     
@@ -106,7 +108,14 @@ def main():
     else:
         print("ERROR: this should not happen. These contiguity constraints not supported:",contiguity)
     
+    # inject heuristic warm start obtained by solving Hess model
+    (heuristic_labeling, heuristic_time) = hess.solve_hess_model(DG)
+    result['heur_time'] = '{0:.2f}'.format(heuristic_time)
+    if heuristic_labeling:
+        mip.inject_warm_start(m, DG, heuristic_labeling)
+    
     # Solve
+    m.Params.TimeLimit = 600
     m.Params.MIPGap = 0.00
     m.Params.IntFeasTol = 1.e-9
     m.Params.FeasibilityTol = 1.e-9
@@ -129,10 +138,10 @@ def main():
         
         # export districting map to png (image)
         export_filename = export_filepath + state + '_' + level + '_' + objective + '_' + contiguity
-        export.export_to_png(DG, labeling, state, level, export_filename + '.png')
+        export.export_to_png(DG, labeling, export_filename + '.png')
 
         # export districting plan to block assignment file (csv)
-        export.export_to_baf(DG, labeling, state, level, export_filename + '.baf')
+        export.export_to_baf(DG, labeling, export_filename + '.baf')
     
     export.append_dict_as_row( summary_csv, result, my_fieldnames )
     

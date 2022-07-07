@@ -4,12 +4,12 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 datapath = '..\\districting-data-2020\\'
 
-def export_to_png(DG, labeling, state, level, png_filename):
+def export_to_png(DG, labeling, png_filename):
     
     print("Exporting to png...")
     
     # Read shapefile from "<state>_<level>.shp"
-    filename = state + '_' + level + '.shp'
+    filename = DG._state + '_' + DG._level + '.shp'
 
     # Read geopandas dataframe from file
     df = gpd.read_file( datapath + filename )
@@ -41,13 +41,13 @@ def export_to_png(DG, labeling, state, level, png_filename):
     my_fig.savefig(png_filename)
     return
 
-def export_to_baf(DG, labeling, state, level, baf_filename):
+def export_to_baf(DG, labeling, baf_filename):
      
     print("Exporting to block assignment file (baf) ...")
     geoid_to_label = { DG.nodes[i]['GEOID20'] : labeling[i] for i in DG.nodes }
         
     # read a block assignment file to get the block GEOIDs
-    readfile = pandas.read_csv(datapath + state + '_CD.baf')
+    readfile = pandas.read_csv(datapath + DG._state + '_CD.baf')
 
     # then write our block assignment file
     with open(baf_filename, 'w') as csvfile: 
@@ -65,11 +65,11 @@ def export_to_baf(DG, labeling, state, level, baf_filename):
                 geoidstr = '0' + geoidstr
                 
             # what are the leading digits of the geoid?
-            if level == 'county':
+            if DG._level == 'county':
                 ld = geoidstr[0:5]
-            elif level == 'tract':
+            elif DG._level == 'tract':
                 ld = geoidstr[0:11]
-            else: # level == 'block'
+            else: # DG._level == 'block'
                 ld = geoidstr
                 
             row = [ geoidstr, geoid_to_label[ld]+1 ]
