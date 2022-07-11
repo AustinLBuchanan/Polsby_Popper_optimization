@@ -108,8 +108,13 @@ def main():
     else:
         print("ERROR: this should not happen. These contiguity constraints not supported:",contiguity)
     
-    # inject heuristic warm start obtained by solving Hess model
-    (heuristic_labeling, heuristic_time) = hess.solve_hess_model(DG)
+    # inject heuristic warm start obtained by (heuristically) solving Hess model
+    if level == 'county':
+        (heuristic_labeling, heuristic_time) = hess.solve_hess_model(DG)
+    elif level == 'tract':
+        (heuristic_labeling, heuristic_time) = hess.hess_heuristic(DG)
+    else:
+        print("ERROR: warm start heuristic assumes level in {county,tract}")
     result['heur_time'] = '{0:.2f}'.format(heuristic_time)
     if heuristic_labeling:
         mip.inject_warm_start(m, DG, heuristic_labeling)
