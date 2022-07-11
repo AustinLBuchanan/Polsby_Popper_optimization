@@ -20,7 +20,7 @@ def add_inverse_Polsby_Popper_objective(m, DG):
                 
     # coef * z[j] is inverse Polsby-Popper score for district j
     coef = 1 / ( 2 * math.pi )
-    z = m.addVars(DG._k)
+    z = m.addVars(DG._k, lb=2*math.pi)
 
     # objective is to minimize average of inverse Polsby-Popper scores
     m.setObjective( ( 1 / DG._k ) * coef * gp.quicksum( z[j] for j in range(DG._k) ), GRB.MINIMIZE )
@@ -49,10 +49,12 @@ def add_average_Polsby_Popper_objective(m, DG):
     
     # z[j] / coef is inverse Polsby-Popper score for district j
     coef = 2 * math.pi 
-    z = m.addVars(DG._k)
+    z = m.addVars(DG._k, lb=2*math.pi)
+    # z = m.addVars(DG._k)
 
     # coef * inv_z[j] = coef / z[j] is the Polsby-Popper score for district j
-    inv_z = m.addVars(DG._k) 
+    inv_z = m.addVars(DG._k, ub=1.0/(2*math.pi))
+    # inv_z = m.addVars(DG._k)
 
     # A[j] = area of district j
     A = m.addVars(DG._k)
