@@ -18,6 +18,9 @@ def build_base_mip(DG):
     
     # add constraints saying that each node i is assigned to one district
     m.addConstrs( gp.quicksum( m._x[i,j] for j in range(DG._k)) == 1 for i in DG.nodes )
+    
+    # add constraints saying that if node i roots district j, then i should be in district j
+    m.addConstrs( m._r[i,j] <= m._x[i,j] for i in DG.nodes for j in range(DG._k) )
 
     # add constraints saying that each district has population at least L and at most U
     m.addConstrs( gp.quicksum( DG.nodes[i]['TOTPOP'] * m._x[i,j] for i in DG.nodes) >= DG._L for j in range(DG._k) )
@@ -41,7 +44,6 @@ def add_partitioning_orbitope_constraints(m, DG):
     m.addConstrs(m._r[DG._ordering[0],j] == w[DG._ordering[0],j] for j in range(DG._k))
     m.addConstrs(m._r[DG._ordering[i],j] == w[DG._ordering[i],j] - w[DG._ordering[i-1],j] for i in range(1,DG.number_of_nodes()) for j in range(DG._k))
 
-    m.addConstrs(m._r[i,j] <= m._x[i,j] for i in DG.nodes for j in range(DG._k))
     m.addConstrs(s[i,j] <= w[i,j] for i in DG.nodes for j in range(DG._k))
 
     m.addConstrs(u[DG._ordering[i],j]+m._r[DG._ordering[i],j] == u[DG._ordering[i+1],j] + m._r[DG._ordering[i+1],j+1] for i in range(0,DG.number_of_nodes()-1) for j in range(DG._k-1))
@@ -53,9 +55,37 @@ def add_partitioning_orbitope_constraints(m, DG):
     m.update()
     return
     
-def inject_warm_start(m, DG, heuristic_labeling):
+# We need to be careful because of partitioning orbitope constraints. 
+#   For each district, find its earliest vertex in the ordering,
+#   then sort these earliest vertices to get the district labels
+#    
+def get_orbitope_friendly_labeling(DG, unfriendly_labeling):    
     
-    root = { j : -1 for j in range(DG._k) }
+    district_map = { j : -1 for j in range(DG._k) }
+    labeling = { i : -1 for i in DG.nodes }
+    count = 0
+    
+    for i in DG._ordering:
+        j = unfriendly_labeling[i]
+        
+        # have we found earliest vertex from district j?
+        if district_map[j] == -1:
+            
+            # if so, then vertex i roots district 'j' in unmapped labeling,
+            #   and anything labeled 'j' should instead be relabeled 'count'
+            district_map[j] = count
+            count += 1
+        
+        labeling[i] = district_map[j]
+        
+    return labeling
+
+    
+def inject_warm_start(m, DG, labeling):
+    
+    #print("In inject, labeling =",labeling)
+    
+    # initialize all variables to 0
     for i in DG._ordering:
         for j in range(DG._k):
             m._x[i,j].start = 0
@@ -65,31 +95,21 @@ def inject_warm_start(m, DG, heuristic_labeling):
         for j in range(DG._k):
             m._y[u,v,j].start = 0
     
+    # now inject the nonzeros of our solution
+    root_found = { j : False for j in range(DG._k) }
     for i in DG._ordering:
-        j = heuristic_labeling[i]
+        
+        j = labeling[i]
         m._x[i,j].start = 1
-        if root[j] == -1:
-            root[j] = i
+        
+        if not root_found[j]:
+            root_found[j] = True
             m._r[i,j].start = 1
-    
+        
     for u,v in DG.edges:
-        j = heuristic_labeling[u]
-        if heuristic_labeling[v] != j:
+        j = labeling[u]
+        if labeling[v] != j:
             m._y[u,v,j].start = 1
     
-#     if contiguity == 'scf':
-        
-#         #f[u,v]=0 when u and v belong to different districts
-#         for u,v in DG.edges:
-#             if heuristic_labeling[u] != heuristic_labeling[v]:
-#                 m._f[u,v].start = 0
-        
-#         # pick a spanning tree of G[district]. other edges have f[u,v]=0
-#         for j in range(DG._k):
-#             district = [ i for i in DG.nodes if heuristic_labeling[i] == j ]
-#             tree_edges = list( nx.dfs_edges(DG.subgraph(district), source=root[j]) ) 
-#             for u in district:
-#                 for v in DG.neighbors(u):
-#                     if v in district and (u,v) not in tree_edges:
-#                         m._f[u,v].start = 0
+    m.update()
     return

@@ -92,24 +92,33 @@ def solve_hess_model(DG):
     m.optimize()
     grb_time += m.runtime
     
-    # need to sort w.r.t. ordering, because of partitioning orbitope
+    # return labeling
+    roots = [ j for j in DG.nodes if x[j,j].x > 0.5 ]
     
-    # for each district, find its earliest vertex in the ordering
-    # then, sort these earliest vertices to get the district labels
-    unmapped_labeling = { i : j for i in DG.nodes for j in DG.nodes if x[i,j].x > 0.5 }
-    district_map = { j : -1 for j in DG.nodes if x[j,j].x > 0.5 }
-    labeling = { i : -1 for i in DG.nodes }
-    count = 0
+    # maps a center *vertex* to its district *number*
+    root_map = { roots[pos] : pos for pos in range(DG._k) }
     
-    for i in DG._ordering:
-        j = unmapped_labeling[i]
-        if district_map[j] == -1:
-            district_map[j] = count
-            count += 1
-        
-        labeling[i] = district_map[j]
-    
+    labeling = { i : root_map[j] for i in DG.nodes for j in DG.nodes if x[i,j].x > 0.5 }
     return (labeling, grb_time)
+
+#     # need to sort w.r.t. ordering, because of partitioning orbitope
+    
+#     # for each district, find its earliest vertex in the ordering
+#     # then, sort these earliest vertices to get the district labels
+#     unmapped_labeling = { i : j for i in DG.nodes for j in DG.nodes if x[i,j].x > 0.5 }
+#     district_map = { j : -1 for j in DG.nodes if x[j,j].x > 0.5 }
+#     labeling = { i : -1 for i in DG.nodes }
+#     count = 0
+    
+#     for i in DG._ordering:
+#         j = unmapped_labeling[i]
+#         if district_map[j] == -1:
+#             district_map[j] = count
+#             count += 1
+        
+#         labeling[i] = district_map[j]
+    
+#     return (labeling, grb_time)
 
 
 def hess_heuristic(DG, impose_contiguity=True):
@@ -256,21 +265,7 @@ def hess_heuristic(DG, impose_contiguity=True):
     else:
         print("Success! Hess heuristic found a contiguous IP solution.")
     
-    # for each district, find its earliest vertex in the ordering
-    # then, sort these earliest vertices to get the district labels
-    unmapped_labeling = { i : j for i in DG.nodes for j in range(DG._k) if x[i,j].x > 0.5 }
-    district_map = { j : -1 for j in range(DG._k) }
-    labeling = { i : -1 for i in DG.nodes }
-    count = 0
-    
-    for i in DG._ordering:
-        j = unmapped_labeling[i]
-        if district_map[j] == -1:
-            district_map[j] = count
-            count += 1
-        
-        labeling[i] = district_map[j]
-    
+    labeling = { i : j for i in DG.nodes for j in range(DG._k) if x[i,j].x > 0.5 }
     return (labeling, grb_time)
   
     
