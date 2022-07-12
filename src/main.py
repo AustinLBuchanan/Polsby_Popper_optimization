@@ -46,6 +46,9 @@ def main():
     # Read graph G and identify number of districts k.
     filename = state + '_' + level + '.json'
     G = Graph.from_json( datapath + filename )
+    if not nx.is_connected(G):
+        print("ERROR: graph is disconnected. Aborting...")
+        return
     DG = nx.DiGraph(G) # directed version of G
     DG._state = state
     DG._level = level
