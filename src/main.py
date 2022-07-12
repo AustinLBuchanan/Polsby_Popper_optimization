@@ -5,7 +5,8 @@ import networkx as nx
 import gurobipy as gp
 import os, sys, math, csv
 import export, ordering, hess
-import mip, mip_contiguity, mip_objective, mip_fixing
+import mip, mip_contiguity, mip_objective, mip_fixing, mip_callback
+
 datapath = '..\\districting-data-2020\\'
 
 def main():
@@ -95,12 +96,19 @@ def main():
     
     # Add variable fixings
     mip_fixing.do_variable_fixing(m, DG)
-    
+
+    # Adding general callback
+    if objective == 'avepp':
+        m._callback = mip_callback.gen_callback
+
     # Add contiguity constraints
     if contiguity == 'lcut':
         m._DG = DG
         m.Params.LazyConstraints = 1
-        m._callback = mip_contiguity.lcut_callback
+        if objective == 'avepp':
+            m._callback = mip_callback.gen_lcut_callback
+        else:
+            m._callback = mip_callback.lcut_callback
     elif contiguity == 'scf':
         mip_contiguity.add_scf_constraints(m, DG)
     elif contiguity == 'shir':
