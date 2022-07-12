@@ -4,7 +4,6 @@ import networkx as nx
 
 def lcut_callback(m, where):
     if where == GRB.Callback.MIPSOL:
-        
         m._numCallbacks += 1 
         DG = m._DG
         xval = m.cbGetSolution(m._x)

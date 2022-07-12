@@ -1,6 +1,8 @@
+import networkx as nx
 import gurobipy as gp
 from gurobipy import GRB
 from pyproj import Proj
+import random
 from mip_contiguity import most_possible_nodes_in_one_district
 
 def sq_eucl_dist(x1,y1,x2,y2):
@@ -90,25 +92,201 @@ def solve_hess_model(DG):
     m.optimize()
     grb_time += m.runtime
     
-    # need to sort w.r.t. ordering, because of partitioning orbitope
+    # return labeling
+    roots = [ j for j in DG.nodes if x[j,j].x > 0.5 ]
     
-    # for each district, find its earliest vertex in the ordering
-    # then, sort these earliest vertices to get the district labels
-    unmapped_labeling = { i : j for i in DG.nodes for j in DG.nodes if x[i,j].x > 0.5 }
-    district_map = { j : -1 for j in DG.nodes if x[j,j].x > 0.5 }
-    labeling = { i : -1 for i in DG.nodes }
-    count = 0
+    # maps a center *vertex* to its district *number*
+    root_map = { roots[pos] : pos for pos in range(DG._k) }
     
-    for i in DG._ordering:
-        j = unmapped_labeling[i]
-        if district_map[j] == -1:
-            district_map[j] = count
-            count += 1
-        
-        labeling[i] = district_map[j]
-    
+    labeling = { i : root_map[j] for i in DG.nodes for j in DG.nodes if x[i,j].x > 0.5 }
     return (labeling, grb_time)
+
+#     # need to sort w.r.t. ordering, because of partitioning orbitope
     
+#     # for each district, find its earliest vertex in the ordering
+#     # then, sort these earliest vertices to get the district labels
+#     unmapped_labeling = { i : j for i in DG.nodes for j in DG.nodes if x[i,j].x > 0.5 }
+#     district_map = { j : -1 for j in DG.nodes if x[j,j].x > 0.5 }
+#     labeling = { i : -1 for i in DG.nodes }
+#     count = 0
+    
+#     for i in DG._ordering:
+#         j = unmapped_labeling[i]
+#         if district_map[j] == -1:
+#             district_map[j] = count
+#             count += 1
+        
+#         labeling[i] = district_map[j]
+    
+#     return (labeling, grb_time)
+
+
+def hess_heuristic(DG, impose_contiguity=True):
+    
+    print("Applying Hess heuristic to get a MIP warm start...")
+    
+    # map projection
+    epsg = get_epsg(DG._state)
+    p = Proj("EPSG:"+epsg, preserve_units=True) 
+    
+    # get lat and long
+    for i in DG.nodes:
+        DG.nodes[i]['C_X'] = DG.nodes[i]['INTPTLON20']  # longitude of county's center
+        DG.nodes[i]['C_Y'] = DG.nodes[i]['INTPTLAT20']  # latitude of county's center
+        
+        # projection to get (x,y) coordinates (units of KM)
+        (x,y) = p( DG.nodes[i]['C_X'], DG.nodes[i]['C_Y'] )
+        DG.nodes[i]['X'] = x / 1000
+        DG.nodes[i]['Y'] = y / 1000  
+    
+    # get initial roots
+    roots = list()
+    nodes = [ i for i in DG.nodes ]
+    weights = [ 1 for i in DG.nodes ]
+    means_x = list()
+    means_y = list()
+
+    while len(roots) < DG._k:
+
+        r = random.choices(nodes, weights=weights, k=1)[0]
+        if r in roots:
+            continue
+
+        roots.append(r)
+        means_x.append( DG.nodes[r]['X'] ) 
+        means_y.append( DG.nodes[r]['Y'] )
+
+        dist = [ sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],DG.nodes[r]['X'],DG.nodes[r]['Y']) for i in DG.nodes ]
+
+        if len(roots) == 1:
+            # initialize weights
+            weights = [ DG.nodes[i]['TOTPOP'] * dist[i] * dist[i] for i in DG.nodes ]
+        else:
+            # update weights
+            weights = [ min( weights[i], DG.nodes[i]['TOTPOP'] * dist[i] * dist[i] ) for i in DG.nodes ]
+
+    #print("Initial roots =",roots)  
+    
+    # create model 
+    m = gp.Model()
+    m.Params.OutputFlag = 0
+
+    # create x[i,j] variable which equals one when county i is 
+    #    assigned to district j (actually, use continuous 0-1 now)
+    x = m.addVars( DG.nodes, DG._k )
+    
+    # add constraints saying that each county i is assigned to one district
+    m.addConstrs( gp.quicksum( x[i,j] for j in range(DG._k) ) == 1 for i in DG.nodes )
+
+    # add constraints that say: if j roots a district, then its population is between L and U.
+    m.addConstrs( gp.quicksum( DG.nodes[i]['TOTPOP'] * x[i,j] for i in DG.nodes ) >= DG._L for j in range(DG._k) )
+    m.addConstrs( gp.quicksum( DG.nodes[i]['TOTPOP'] * x[i,j] for i in DG.nodes ) <= DG._U for j in range(DG._k) )
+
+    total_cost = sum( weights )
+    max_iterations = 10
+    grb_time = 0
+    #print("Iteration \t Objective \t iter_time")
+    
+    for iteration in range(max_iterations):
+
+        old_total_cost = total_cost
+        total_cost = 0
+
+        # get clusters
+        m.setObjective( gp.quicksum( DG.nodes[i]['TOTPOP'] * sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) * x[i,j] for i in DG.nodes for j in range(DG._k) ), GRB.MINIMIZE )
+        m.optimize()
+        #print(iteration,"\t",'{0:.2f}'.format(m.objVal),"\t",'{0:.2f}'.format(m.runtime))
+
+        total_cost = m.objVal
+        grb_time += m.runtime
+        clusters = [ [ i for i in DG.nodes if x[i,j].x > 0.5 ] for j in range(DG._k) ]
+
+        # convergence?
+        if total_cost == old_total_cost:
+            break
+        else:
+            # get next means
+            population = [ sum( DG.nodes[i]['TOTPOP'] * x[i,j].x for i in DG.nodes ) for j in range(DG._k) ]
+            means_x = [ sum( DG.nodes[i]['TOTPOP'] * DG.nodes[i]['X'] * x[i,j].x for i in DG.nodes ) / population[j] for j in range(DG._k) ]
+            means_y = [ sum( DG.nodes[i]['TOTPOP'] * DG.nodes[i]['Y'] * x[i,j].x for i in DG.nodes ) / population[j] for j in range(DG._k) ]
+
+    # now solve as an IP
+    for i in DG.nodes:
+        for j in range(DG._k):
+            x[i,j].vtype = GRB.BINARY
+
+    # get clusters
+    m.setObjective( gp.quicksum( DG.nodes[i]['TOTPOP'] * sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) * x[i,j] for i in DG.nodes for j in range(DG._k)), GRB.MINIMIZE )
+    m.Params.MIPGap = 0.01 # 1% gap permitted
+    m.Params.TimeLimit = 60 # 60 second limit
+    m.Params.IntFeasTol = 1.e-9
+    m.Params.FeasibilityTol = 1.e-9
+    #m.Params.OutputFlag = 1
+    m.optimize()
+    grb_time += m.runtime
+    #print("Hess heuristic IP time =",m.runtime)
+
+    # if infeasible, nothing to report
+    if m.solCount <= 0:
+        print("WARNING: Hess heuristic failed to find IP solution. Aborting...")
+        return (False, grb_time)
+    
+    # check connectivity. If necessary, add contiguity constraints and re-solve
+    connected = True
+    for j in range(DG._k):
+        district = [ i for i in DG.nodes if x[i,j].x > 0.5 ]
+        is_conn = nx.is_strongly_connected(DG.subgraph(district)) 
+        #print("In Hess heuristic, is district",j,"connected?",is_conn)
+        if not is_conn:
+            connected = False
+            
+    # add DAG constraints (which are sufficent but not necessary for contiguity);
+    #    1. find 'root' of district j that is closest to its district's (x,y)-means
+    #    2. find BFS tree of DG rooted at 'root'
+    #    3. get associated vertex ordering ('root', ..., )
+    #    4. if x[i,j]=1 then sum( x[v,j] for v in N(i) prior in ordering) >= 1.
+    if impose_contiguity and not connected:
+        for j in range(DG._k):
+            district = [ i for i in DG.nodes if x[i,j].x > 0.5 ]
+            min_dist = min( sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) for i in district)
+            roots = [ i for i in district if min_dist == sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) ]
+            root = roots[0]
+            
+            pos = get_bfs_position(DG, root)
+            m.addConstrs( x[i,j] <= gp.quicksum( x[v,j] for v in DG.neighbors(i) if pos[v] < pos[i] ) for i in DG.nodes if i != root )
+            
+        m.optimize()
+        grb_time += m.runtime
+    
+    # if infeasible, nothing to report
+    if m.solCount <= 0:
+        print("WARNING: Hess heuristic failed to find *contiguous* IP solution. Aborting...")
+        return (False, grb_time)
+    else:
+        print("Success! Hess heuristic found a contiguous IP solution.")
+    
+    labeling = { i : j for i in DG.nodes for j in range(DG._k) if x[i,j].x > 0.5 }
+    return (labeling, grb_time)
+  
+    
+def get_bfs_position(DG, root):
+    
+    position = { i : -1 for i in DG.nodes }
+    position[root] = 0
+    children = [ root ]
+    p = 1
+    
+    while children:
+        parents = children
+        children = list()
+        for i in parents:
+            for j in DG.neighbors(i):
+                if position[j] == -1:
+                    children.append(j)
+                    position[j] = p
+                    p += 1
+                    
+    return position
     
 def get_epsg(state):
     for fips in states.keys():
