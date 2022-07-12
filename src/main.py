@@ -100,7 +100,7 @@ def main():
         if objective == 'avepp':
             m._callback = mip_callback.gen_lcut_callback
         else:
-            m._callback = mip_callback.lcut_callback
+            m._callback = mip_contiguity.lcut_callback
     elif contiguity == 'scf':
         mip_contiguity.add_scf_constraints(m, DG)
     elif contiguity == 'shir':
