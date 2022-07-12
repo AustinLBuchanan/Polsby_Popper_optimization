@@ -13,6 +13,8 @@ def gen_lcut_callback(m, where):
 
 def gen_callback(m, where):
 
+    return
+
     if where != GRB.Callback.MIPNODE or \
        m.cbGet(GRB.Callback.MIPNODE_STATUS) != GRB.OPTIMAL:
         return
