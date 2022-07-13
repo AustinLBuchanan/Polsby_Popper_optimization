@@ -2,7 +2,9 @@ import pandas
 import csv
 import geopandas as gpd
 import matplotlib.pyplot as plt
-datapath = '..\\districting-data-2020\\'
+import pathlib
+
+datapath = pathlib.Path("../districting-data-2020/")
 
 def export_to_png(DG, labeling, png_filename):
     
@@ -12,7 +14,7 @@ def export_to_png(DG, labeling, png_filename):
     filename = DG._state + '_' + DG._level + '.shp'
 
     # Read geopandas dataframe from file
-    df = gpd.read_file( datapath + filename )
+    df = gpd.read_file( datapath / filename )
     
     # Which district is each node assigned to?
     assignment = [ -1 for i in DG.nodes ]
@@ -47,7 +49,7 @@ def export_to_baf(DG, labeling, baf_filename):
     geoid_to_label = { DG.nodes[i]['GEOID20'] : labeling[i] for i in DG.nodes }
         
     # read a block assignment file to get the block GEOIDs
-    readfile = pandas.read_csv(datapath + DG._state + '_CD.baf')
+    readfile = pandas.read_csv(datapath / (DG._state + '_CD.baf'))
 
     # then write our block assignment file
     with open(baf_filename, 'w') as csvfile: 

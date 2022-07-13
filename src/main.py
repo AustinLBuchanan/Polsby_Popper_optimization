@@ -6,7 +6,10 @@ import gurobipy as gp
 import os, sys, math, csv
 import export, ordering, hess
 import mip, mip_contiguity, mip_objective, mip_fixing, mip_local_search, mip_callback
-datapath = '..\\districting-data-2020\\'
+import pathlib
+
+datapath = pathlib.Path("../districting-data-2020/")
+
 
 def main():
     
@@ -45,7 +48,7 @@ def main():
     
     # Read graph G and identify number of districts k.
     filename = state + '_' + level + '.json'
-    G = Graph.from_json( datapath + filename )
+    G = Graph.from_json( datapath / filename )
     if not nx.is_connected(G):
         print("ERROR: graph is disconnected. Aborting...")
         return
