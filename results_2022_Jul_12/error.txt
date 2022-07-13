@@ -1,0 +1,6 @@
+C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {214}
+  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
+C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {214}
+  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
+C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {214}
+  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
