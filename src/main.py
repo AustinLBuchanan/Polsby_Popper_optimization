@@ -29,7 +29,7 @@ def main():
     summary_csv = export_filepath + 'summary.csv'
     my_fieldnames = ['state','level','objective','contiguity'] # arguments
     my_fieldnames += ['k','L','U','n','m'] # params
-    my_fieldnames += ['B_size', 'B_time', 'hess_time', 'ls_time'] # max B and heuristic info
+    my_fieldnames += ['B_size', 'B_time', 'hess_time', 'ls_obj', 'ls_time'] # max B and heuristic info
     my_fieldnames += ['MIP_obj','MIP_bound','MIP_time', 'MIP_status', 'MIP_nodes', 'callbacks', 'lazy_cuts'] # MIP info
     
     # if results directory and csv file doesn't exist yet, then create them
@@ -117,22 +117,24 @@ def main():
     
     # MIP-based local search
     if hess_labeling:
-        # convert hess_labeling into one that meets the partitioning orbitope restrictions
-        orbitope_friendly_labeling = mip.get_orbitope_friendly_labeling(DG, hess_labeling)
-        
         # Improve solution quality with MIP-based local search,
         #   but first add one-root-per-district constraints!
         #   They are implied by partitioning orbitope EF, but EF hasn't been added yet.
         root_constrs = m.addConstrs( gp.quicksum( m._r[i,j] for i in DG.nodes ) == 1 for j in range(DG._k) )
-        (ls_labeling, ls_time) = mip_local_search.local_search(m, DG, orbitope_friendly_labeling, radius=1)
+        
+        ls_labeling = hess_labeling
+        ls_time = 0
+        max_radius = 3
+        for radius in range(1,max_radius+1):
+            (ls_labeling, ls_obj, this_ls_time) = mip_local_search.local_search(m, DG, ls_labeling, radius)
+            ls_time += this_ls_time
+
         m.remove(root_constrs)
-        
-        # Inject local search warm start
-        mip.inject_warm_start(m, DG, ls_labeling)
-        
         result['ls_time'] = '{0:.2f}'.format(ls_time)
+        result['ls_obj'] = ls_obj
     else:
         result['ls_time'] = 'n/a'
+        result['ls_obj'] = 'n/a'
     
     # Symmetry handling (partitioning orbitope)
     mip.add_partitioning_orbitope_constraints(m, DG)
@@ -140,7 +142,14 @@ def main():
     # Add variable fixings
     mip_fixing.do_variable_fixing(m, DG)
     
+    # Inject local search warm start
+    if ls_labeling:
+        # convert ls_labeling into one that meets the partitioning orbitope restrictions
+        orbitope_friendly_labeling = mip.get_orbitope_friendly_labeling(DG, ls_labeling)
+        mip.inject_warm_start(m, DG, orbitope_friendly_labeling)
+    
     # Solve
+    m.Params.Method = 3 # concurrent
     m.Params.TimeLimit = 600
     m.Params.MIPGap = 0.00
     m.Params.IntFeasTol = 1.e-9
