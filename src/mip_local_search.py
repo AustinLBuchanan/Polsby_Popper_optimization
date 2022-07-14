@@ -17,6 +17,7 @@ def local_search(m, DG, labeling, radius=1):
     
     # get objective value of initial labeling
     m.Params.OutputFlag = 0
+    m.Params.TimeLimit = 60 
     set_x_ub_wrt_labeling(m, DG, labeling, 0)
     mip.inject_warm_start(m, DG, labeling)
     m.optimize(my_callback)
@@ -33,10 +34,12 @@ def local_search(m, DG, labeling, radius=1):
         
         set_x_ub_wrt_labeling(m, DG, labeling, radius)
         m.optimize(my_callback)
-        grb_time += m.runtime
-        print(iteration,'\t','{0:.8f}'.format(m.objVal),'\t','{0:.2f}'.format(m.runtime))
         
-        if m.objVal == old_obj:
+        grb_time += m.runtime
+        new_obj = m.objVal
+        print(iteration,'\t','{0:.8f}'.format(new_obj),'\t','{0:.2f}'.format(m.runtime))
+        
+        if new_obj == old_obj:
             break
         else:
             labeling = { i : j for i in DG.nodes for j in range(DG._k) if m._x[i,j].x > 0.5 }
@@ -50,7 +53,7 @@ def local_search(m, DG, labeling, radius=1):
     m.update()
     
     # return the final labeling
-    return (labeling, grb_time)
+    return (labeling, new_obj, grb_time)
 
 
 # set all x[i,j] upper bounds to ub 
