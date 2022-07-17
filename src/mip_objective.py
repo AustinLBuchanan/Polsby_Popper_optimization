@@ -1,5 +1,5 @@
-import gurobipy as gp
-from gurobipy import GRB
+import xprgrb as gp
+from xprgrb import GRB
 import math
 
 def add_cut_edges_objective(m, DG):

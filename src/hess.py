@@ -1,6 +1,6 @@
 import networkx as nx
-import gurobipy as gp
-from gurobipy import GRB
+import xprgrb as gp
+from xprgrb import GRB
 from pyproj import Proj
 import random
 from mip_contiguity import most_possible_nodes_in_one_district

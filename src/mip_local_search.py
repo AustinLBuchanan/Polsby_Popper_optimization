@@ -1,6 +1,6 @@
 import networkx as nx
-import gurobipy as gp
-from gurobipy import GRB
+import xprgrb as gp
+from xprgrb import GRB
 import mip, mip_objective, mip_contiguity, mip_fixing
 
 # In the spirit of "ILP-based local search for graph partitioning"

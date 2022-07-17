@@ -1,5 +1,5 @@
-import gurobipy as gp
-from gurobipy import GRB
+import xprgrb as gp
+from xprgrb import GRB
 
 def sort_by_second(val):
     return val[1]

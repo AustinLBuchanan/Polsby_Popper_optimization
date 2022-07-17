@@ -2,7 +2,7 @@ from number_of_districts import congressional_districts_2020
 from gerrychain import Graph
 from datetime import date
 import networkx as nx
-import gurobipy as gp
+import xprgrb as gp
 import os, sys, math, csv
 import export, ordering, hess
 import mip, mip_contiguity, mip_objective, mip_fixing, mip_local_search, mip_callback
