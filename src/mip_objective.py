@@ -29,7 +29,7 @@ def add_inverse_Polsby_Popper_objective(m, DG):
     P = m.addVars(DG._k)
     
     # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
-    m.addConstrs( P[j] * P[j] <= 2 * A[j] * m._z[j] for j in range(DG._k) )
+    m.addConstrs( P[j] * P[j] <= 2 * A[j] * z[j] for j in range(DG._k) )
 
     # add constraints on areas A[j] 
     m.addConstrs( A[j] == gp.quicksum( DG.nodes[i]['area'] * m._x[i,j] for i in DG.nodes ) for j in range(DG._k) )
@@ -61,10 +61,10 @@ def add_average_Polsby_Popper_objective(m, DG):
     m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( inv_z[j] for j in range(DG._k) ), GRB.MAXIMIZE )
 
     # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
-    m.addConstrs( P[j] * P[j] <= 2 * A[j] * m._z[j] for j in range(DG._k) )
+    m.addConstrs( P[j] * P[j] <= 2 * A[j] * z[j] for j in range(DG._k) )
 
     # impose inv_z = 1 / z through non-convex constraint:
-    m.addConstrs( m._z[j] * m._inv_z[j] == 1 for j in range(DG._k) )
+    m.addConstrs( z[j] * inv_z[j] == 1 for j in range(DG._k) )
 
     # add constraints on areas A[j] 
     m.addConstrs( A[j] == gp.quicksum( DG.nodes[i]['area'] * m._x[i,j] for i in DG.nodes ) for j in range(DG._k) )
