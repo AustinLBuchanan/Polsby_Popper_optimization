@@ -24,6 +24,45 @@ def quicksum(arg):
         return xp.Sum(arg)
 
 
+def getsol(var, prob):
+    if solver == 'gurobi':
+        return var.x
+    else:
+        return prob.xmodel.getSolution(var)
+
+
+def getLB(var, prob):
+    if solver == 'gurobi':
+        return var.LB
+    else:
+        bds = []
+        prob.xmodel.getlb(bds, var, var)
+        return bds[0]
+
+
+def getUB(var, prob):
+    if solver == 'gurobi':
+        return var.UB
+    else:
+        bds = []
+        prob.xmodel.getub(bds, var, var)
+        return bds[0]
+
+
+def setLB(var, prob, value):
+    if solver == 'gurobi':
+        var.LB = value
+    else:
+        prob.xmodel.chgbounds([var], ['L'], [value])
+
+
+def setUB(var, prob, value):
+    if solver == 'gurobi':
+        var.UB = value
+    else:
+        prob.xmodel.chgbounds([var], ['U'], [value])
+
+
 class Params:
     def __init__(self):
         self.FeasibilityTol = None

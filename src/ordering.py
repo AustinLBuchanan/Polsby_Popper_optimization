@@ -38,7 +38,7 @@ def solve_maxB_problem(DG):
     m.optimize()
     
     if m.status in { GRB.OPTIMAL, GRB.TIME_LIMIT }:
-        B_sol = [ i for i in DG.nodes if B[i].x > 0.5 ]
+        B_sol = [ i for i in DG.nodes if gp.getsol(B[i],m) > 0.5 ]
     else:
         B_sol = list()
     #print("Size of B =",len(B_sol))
