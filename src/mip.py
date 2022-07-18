@@ -18,7 +18,7 @@ def build_base_mip(DG):
         m._y = m.addVars(DG.edges, DG._k, name='y', vtype=GRB.BINARY)
     else:
         m._y = m.addVars([(u,v,j) for (u,v) in DG.edges for j in range(DG._k)], name='y', vtype=GRB.BINARY)
-    print(m._y)
+
     # add constraints saying that each node i is assigned to one district
     m.addConstrs( gp.quicksum( m._x[i,j] for j in range(DG._k)) == 1 for i in DG.nodes )
     

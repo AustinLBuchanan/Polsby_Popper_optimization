@@ -1,6 +1,6 @@
 import networkx as nx
 import xprgrb as gp
-from xprgrb import GRB
+from xprgrb import GRB, solver
 from pyproj import Proj
 import random
 from mip_contiguity import most_possible_nodes_in_one_district
@@ -52,7 +52,10 @@ def solve_hess_model(DG):
     
     # add flow variables
     #    f[i,j,v] = flow across arc (i,j) that is sent from souce/root v
-    f = m.addVars( DG.edges, DG.nodes, name='f' )
+    if solver == 'gurobi':
+        f = m.addVars( DG.edges, DG.nodes, name='f' )
+    else:
+        f = m.addVars([(u,v,j) for (u,v) in DG.edges for j in DG.nodes], name='f')
 
     # add constraints saying that if node i is assigned to node j, 
     #   then node i must consume one unit of node j's flow
