@@ -101,7 +101,10 @@ def add_shir_constraints(m, DG):
     g = m.addVars(DG.nodes, DG._k, name='g')
     
     # f[j,u,v] = amount of flow sent across arc uv of type j
-    f = m.addVars(DG._k, DG.edges, name='f')
+    if solver == 'gurobi':
+        f = m.addVars( DG._k, DG.edges, name='f' )
+    else:
+        f = m.addVars([(j,u,v) for j in range(DG._k) for (u,v) in DG.edges], name='f')
 
     # compute big-M  
     M = most_possible_nodes_in_one_district(DG) - 1
