@@ -1,5 +1,5 @@
 import xprgrb as gp
-from xprgrb import GRB
+from xprgrb import GRB, solver
 
 def build_base_mip(DG):
     

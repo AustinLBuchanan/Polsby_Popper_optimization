@@ -28,6 +28,7 @@ class Params:
     def __init__(self):
         self.FeasibilityTol = None
         self.IntFeasTol = None
+        self.LogToConsole = None
         self.LazyConstraints = None
         self.Method = None
         self.MIPFocus = None
@@ -68,7 +69,7 @@ class Model:
         if solver == 'gurobi':
             return self.gmodel.addConstr(constraint)
         elif solver == 'xpress':
-            self.xmodel.addConstr(constraint)
+            self.xmodel.addConstraint(constraint)
             return constraint
 
 
@@ -79,8 +80,8 @@ class Model:
         if solver == 'gurobi':
             return self.gmodel.addConstrs(*constraints)
         elif solver == 'xpress':
-            self.xmodel.addConstr(*constraints)
-            return constraint
+            self.xmodel.addConstraint(*constraints)
+            return constraints
 
 
     def addVar(self, **params):
@@ -123,6 +124,7 @@ class Model:
             if self.Params.FeasibilityTol  is not None: self.gmodel.Params.FeasibilityTol  = self.Params.FeasibilityTol
             if self.Params.IntFeasTol      is not None: self.gmodel.Params.IntFeasTol      = self.Params.IntFeasTol
             if self.Params.LazyConstraints is not None: self.gmodel.Params.LazyConstraints = self.Params.LazyConstraints
+            if self.Params.LogToConsole    is not None: self.gmodel.Params.LogToConsole    = self.Params.LogToConsole
             if self.Params.Method          is not None: self.gmodel.Params.Method          = self.Params.Method
             if self.Params.MIPFocus        is not None: self.gmodel.Params.MIPFocus        = self.Params.MIPFocus
             if self.Params.MIPGap          is not None: self.gmodel.Params.MIPGap          = self.Params.MIPGap
@@ -134,15 +136,16 @@ class Model:
 
         elif solver == 'xpress':
 
-            if self.Params.FeasibilityTol  is not None: self.gmodel.controls.FeasibilityTol  = self.Params.FeasibilityTol
-            if self.Params.IntFeasTol      is not None: self.gmodel.controls.IntFeasTol      = self.Params.IntFeasTol
-            if self.Params.LazyConstraints is not None: self.gmodel.controls.LazyConstraints = self.Params.LazyConstraints
-            if self.Params.Method          is not None: self.gmodel.controls.Method          = self.Params.Method
-            if self.Params.MIPFocus        is not None: self.gmodel.controls.MIPFocus        = self.Params.MIPFocus
-            if self.Params.MIPGap          is not None: self.gmodel.controls.MIPGap          = self.Params.MIPGap
-            if self.Params.NonConvex       is not None: self.gmodel.controls.NonConvex       = self.Params.NonConvex
-            if self.Params.OutputFlag      is not None: self.gmodel.controls.OutputFlag      = self.Params.OutputFlag
-            if self.Params.TimeLimit       is not None: self.gmodel.controls.TimeLimit       = self.Params.TimeLimit
+            if self.Params.FeasibilityTol  is not None: self.xmodel.controls.feastol         = self.Params.FeasibilityTol
+            if self.Params.IntFeasTol      is not None: self.xmodel.controls.miptol          = self.Params.IntFeasTol
+            #if self.Params.LazyConstraints is not None: self.xmodel.controls.LazyConstraints = self.Params.LazyConstraints
+            #if self.Params.LogToConsole    is not None: self.xmodel.controls.LogToConsole    = self.Params.LogToConsole
+            #if self.Params.Method          is not None: self.xmodel.controls.Method          = self.Params.Method
+            #if self.Params.MIPFocus        is not None: self.xmodel.controls.MIPFocus        = self.Params.MIPFocus
+            if self.Params.MIPGap          is not None: self.xmodel.controls.mipgap          = self.Params.MIPGap
+            #if self.Params.NonConvex       is not None: self.xmodel.controls.NonConvex       = self.Params.NonConvex
+            #if self.Params.OutputFlag      is not None: self.xmodel.controls.OutputFlag      = self.Params.OutputFlag
+            if self.Params.TimeLimit       is not None: self.xmodel.controls.maxtime       = self.Params.TimeLimit
 
             self.xmodel.solve()
 
@@ -157,8 +160,12 @@ class Model:
         if solver == 'gurobi':
             return getattr(self.gmodel, name)
         else:
-            pass
-
+            if name == 'status':
+                return {xp.mip_infeas: gurobipy.GRB.INFEASIBLE,
+                        xp.mip_optimal: gurobipy.GRB.OPTIMAL,
+                        xp.mip_solution: gurobipy.GRB.TIME_LIMIT}[self.xmodel.getProbStatus()]
+            elif name == 'runtime':
+                return self.xmodel.attributes.time
 
     def __setattr__ (self, name, value):
 
