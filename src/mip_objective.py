@@ -74,9 +74,9 @@ def add_average_Polsby_Popper_objective(m, DG):
         pass
         assert m.xmodel is not None
         # Do not add nonconvex constraint, but add explicit callbacks
-        m.xmodel.addcbintsol(xpress_chksol_cb, DG, 1)
-        m.xmodel.addcboptnode(xpress_cut_cb, DG, 1)
-        m.xmodel.addcbchgbranchobject(xpress_branch_cb, DG, 1)
+        m.xmodel.addcbintsol(xpress_chksol_cb, m, 1)
+        m.xmodel.addcboptnode(xpress_cut_cb, m, 1)
+        m.xmodel.addcbchgbranchobject(xpress_branch_cb, m, 1)
 
     # add constraints on areas A[j] 
     m.addConstrs( A[j] == gp.quicksum( DG.nodes[i]['area'] * m._x[i,j] for i in DG.nodes ) for j in range(DG._k) )
