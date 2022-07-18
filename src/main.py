@@ -171,7 +171,7 @@ def main():
     result['lazy_cuts'] = m._numLazyCuts
     
     # report best solution found, if any
-    if m.SolCount <= 0:
+    if m.solCount <= 0:
         result['MIP_obj'] = 'no_solution_found'
     else:
         result['MIP_obj'] = m.objVal
