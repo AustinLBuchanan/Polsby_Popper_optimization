@@ -68,7 +68,7 @@ class Model:
         if solver == 'gurobi':
             return self.gmodel.addConstr(constraint)
         elif solver == 'xpress':
-            self.xmodel.addConstr(constraint) 
+            self.xmodel.addConstr(constraint)
             return constraint
 
 
@@ -88,7 +88,7 @@ class Model:
             return self.gmodel.addVar(**params)
         elif solver == 'xpress':
             x = xp.var(**params)
-            self.xmodel.addVar(x)
+            self.xmodel.addVariable(x)
             return x
 
 
@@ -96,8 +96,17 @@ class Model:
         if solver == 'gurobi':
             return self.gmodel.addVars(*indices, **params)
         elif solver == 'xpress':
-            x = xp.vars(*indices, **params)
-            self.xmodel.addVar(x)
+            if 'vtype' in params.keys():
+                params['vartype'] = {'B': xp.binary, 'I': xp.integer, 'C': xp.continuous} [params['vtype']]
+                del params['vtype']
+            args = []
+            for i,_ in enumerate(indices):
+                if isinstance(indices[i], int):
+                    args.append(indices[i])
+                else:
+                    args.append(list(indices[i]))
+            x = xp.vars(*args, **params)
+            self.xmodel.addVariable(x)
             return x
 
 
@@ -156,7 +165,10 @@ class Model:
         if name in ['gmodel', 'xmodel', 'Params', '_callback']:
             return object.__setattr__(self, name, value)
         else:
-            return object.__setattr__(self.gmodel, name, value)
+            if solver == 'gurobi':
+                return object.__setattr__(self.gmodel, name, value)
+            else:
+                return object.__setattr__(self, name, value)
 
 
 GRB = gurobipy.GRB
