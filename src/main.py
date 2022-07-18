@@ -3,6 +3,7 @@ from gerrychain import Graph
 from datetime import date
 import networkx as nx
 import xprgrb as gp
+from xprgrb import solver
 import os, sys, math, csv
 import export, ordering, hess
 import mip, mip_contiguity, mip_objective, mip_fixing, mip_local_search, mip_callback
@@ -100,10 +101,13 @@ def main():
     if contiguity == 'lcut':
         m._DG = DG
         m.Params.LazyConstraints = 1
-        if objective == 'avepp':
-            m._callback = mip_callback.gen_lcut_callback
-        else:
+
+        if solver == 'gurobi':
             m._callback = mip_contiguity.lcut_callback
+        else:
+            assert m.xmodel is not None
+            m.xmodel.addcbintsol(mip_contiguity.lcut_callback_xpress, DG, 1)
+
     elif contiguity == 'scf':
         mip_contiguity.add_scf_constraints(m, DG)
     elif contiguity == 'shir':

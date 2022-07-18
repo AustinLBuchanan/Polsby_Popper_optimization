@@ -1,5 +1,6 @@
 import xprgrb as gp
-from xprgrb import GRB
+from xprgrb import GRB, solver
+from mip_callback import xpress_branch_cb, xpress_cut_cb
 import math
 
 def add_cut_edges_objective(m, DG):
@@ -63,8 +64,19 @@ def add_average_Polsby_Popper_objective(m, DG):
     # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
     m.addConstrs( P[j] * P[j] <= 2 * A[j] * z[j] for j in range(DG._k) )
 
-    # impose inv_z = 1 / z through non-convex constraint:
-    m.addConstrs( z[j] * inv_z[j] == 1 for j in range(DG._k) )
+    if solver == 'gurobi':
+
+        # impose inv_z = 1 / z through non-convex constraint:
+        m.addConstrs( z[j] * inv_z[j] == 1 for j in range(DG._k) )
+        m.Params.NonConvex = 2
+
+    else:
+        pass
+        assert m.xmodel is not None
+        # Do not add nonconvex constraint, but add explicit callbacks
+        m.xmodel.addcbintsol(xpress_chksol_cb, DG, 1)
+        m.xmodel.addcboptnode(xpress_cut_cb, DG, 1)
+        m.xmodel.addcbchgbranchobject(xpress_branch_cb, DG, 1)
 
     # add constraints on areas A[j] 
     m.addConstrs( A[j] == gp.quicksum( DG.nodes[i]['area'] * m._x[i,j] for i in DG.nodes ) for j in range(DG._k) )
@@ -74,6 +86,5 @@ def add_average_Polsby_Popper_objective(m, DG):
         m.addConstr( P[j] == gp.quicksum( DG.edges[u,v]['shared_perim'] * m._y[u,v,j] for u,v in DG.edges )
                  + gp.quicksum( DG.nodes[i]['boundary_perim'] * m._x[i,j] for i in DG.nodes if DG.nodes[i]['boundary_node'] ) )
 
-    m.Params.NonConvex = 2
     m.update()
     return

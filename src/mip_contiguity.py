@@ -1,5 +1,5 @@
 import xprgrb as gp
-from xprgrb import GRB
+from xprgrb import GRB, solver
 import networkx as nx
 
 def lcut_callback(m, where):
@@ -66,6 +66,11 @@ def lcut_callback(m, where):
                 m._numLazyCuts += 1
                 
     return
+
+
+def lcut_callback_xpress(m, DG):
+    return 0
+
 
 def find_fischetti_separator(DG, component, b):
     neighbors_component = [ False for i in DG.nodes ]
