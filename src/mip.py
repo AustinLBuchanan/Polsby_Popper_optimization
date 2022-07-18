@@ -8,14 +8,17 @@ def build_base_mip(DG):
     
     # Create variables
     # x[i,j] equals one when node i is assigned to district j
-    m._x = m.addVars(DG.nodes, DG._k, vtype=GRB.BINARY)  
-    
+    m._x = m.addVars(DG.nodes, DG._k, name='x', vtype=GRB.BINARY)
+
     # r[i,j] equals one when node i roots district j
-    m._r = m.addVars(DG.nodes, DG._k, vtype=GRB.BINARY)  
+    m._r = m.addVars(DG.nodes, DG._k, name='r', vtype=GRB.BINARY)
 
     # y[u,v,j] equals one when arc (u,v) is cut because u->j but not v->j
-    m._y = m.addVars(DG.edges, DG._k, vtype=GRB.BINARY) 
-    
+    if solver == 'gurobi':
+        m._y = m.addVars(DG.edges, DG._k, name='y', vtype=GRB.BINARY)
+    else:
+        m._y = m.addVars([(u,v,j) for (u,v) in DG.edges for j in range(DG._k)], name='y', vtype=GRB.BINARY)
+    print(m._y)
     # add constraints saying that each node i is assigned to one district
     m.addConstrs( gp.quicksum( m._x[i,j] for j in range(DG._k)) == 1 for i in DG.nodes )
     
@@ -32,17 +35,17 @@ def build_base_mip(DG):
     # add strengthening vars/constraints:
     # edge {u,v} is cut <=> arc (u,v) is cut <=> arc (v,u) is cut
     undirected_edges = [ (u,v) for u,v in DG.edges if u<v ]
-    m._is_cut = m.addVars( undirected_edges, vtype=GRB.BINARY )
+    m._is_cut = m.addVars( undirected_edges, name='iscut', vtype=GRB.BINARY )
     m.addConstrs( m._is_cut[min(u,v),max(u,v)] == gp.quicksum( m._y[u,v,j] for j in range(DG._k) ) for u,v in DG.edges )
     
     m.update()
     return m
     
 def add_partitioning_orbitope_constraints(m, DG):
-    
-    s = m.addVars(DG.nodes, DG._k)
-    u = m.addVars(DG.nodes, DG._k)
-    w = m.addVars(DG.nodes, DG._k) 
+
+    s = m.addVars(DG.nodes, DG._k, name='s')
+    u = m.addVars(DG.nodes, DG._k, name='u')
+    w = m.addVars(DG.nodes, DG._k, name='w')
 
     m.addConstrs(m._x[i,j] == s[i,j]-s[i,j+1] for i in DG.nodes for j in range(DG._k-1))
     m.addConstrs(m._x[i,DG._k-1] == s[i,DG._k-1] for i in DG.nodes)

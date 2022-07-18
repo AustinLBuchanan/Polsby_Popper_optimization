@@ -32,7 +32,7 @@ def solve_hess_model(DG):
 
     # create x[i,j] variable which equals one when county i 
     #    is assigned to (the district centered at) county j
-    x = m.addVars( DG.nodes, DG.nodes, vtype=GRB.BINARY )
+    x = m.addVars( DG.nodes, DG.nodes, name='x', vtype=GRB.BINARY )
     
     # objective is to minimize the moment of inertia: sum (d^2 * p * x over all i and j)
     m.setObjective( gp.quicksum( round( sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],DG.nodes[j]['X'],DG.nodes[j]['Y']) * DG.nodes[i]['TOTPOP'] / 1000 ) * x[i,j] for i in DG.nodes for j in DG.nodes ), GRB.MINIMIZE )
@@ -52,7 +52,7 @@ def solve_hess_model(DG):
     
     # add flow variables
     #    f[i,j,v] = flow across arc (i,j) that is sent from souce/root v
-    f = m.addVars( DG.edges, DG.nodes ) 
+    f = m.addVars( DG.edges, DG.nodes, name='f' )
 
     # add constraints saying that if node i is assigned to node j, 
     #   then node i must consume one unit of node j's flow
@@ -173,7 +173,7 @@ def hess_heuristic(DG, impose_contiguity=True):
 
     # create x[i,j] variable which equals one when county i is 
     #    assigned to district j (actually, use continuous 0-1 now)
-    x = m.addVars( DG.nodes, DG._k )
+    x = m.addVars( DG.nodes, DG._k, name='x' )
     
     # add constraints saying that each county i is assigned to one district
     m.addConstrs( gp.quicksum( x[i,j] for j in range(DG._k) ) == 1 for i in DG.nodes )

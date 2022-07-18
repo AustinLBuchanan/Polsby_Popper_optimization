@@ -93,10 +93,10 @@ def find_fischetti_separator(DG, component, b):
 def add_shir_constraints(m, DG):
     
     # g[i,j] = amount of flow generated at node i of type j
-    g = m.addVars(DG.nodes, DG._k)
+    g = m.addVars(DG.nodes, DG._k, name='g')
     
     # f[j,u,v] = amount of flow sent across arc uv of type j
-    f = m.addVars(DG._k, DG.edges)
+    f = m.addVars(DG._k, DG.edges, name='f')
 
     # compute big-M  
     M = most_possible_nodes_in_one_district(DG) - 1
@@ -119,7 +119,7 @@ def add_scf_constraints(m, DG):
     
     # Add flow variables: f[u,v] = amount of flow sent across arc uv 
     #  Flows are sent across arcs of DG
-    m._f = m.addVars( DG.edges )
+    m._f = m.addVars( DG.edges, name='f' )
 
     # if not a root, consume some flow.
     # if a root, only send out (so much) flow.

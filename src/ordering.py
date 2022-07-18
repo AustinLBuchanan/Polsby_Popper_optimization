@@ -16,10 +16,10 @@ def solve_maxB_problem(DG):
     q = DG._k
     
     # X[i,j]=1 if vertex i is assigned to bin j
-    X = m.addVars(DG.nodes, q, vtype=GRB.BINARY)
+    X = m.addVars(DG.nodes, q, name='X', vtype=GRB.BINARY)
     
     # B[i]=1 if vertex i is selected in set B
-    B = m.addVars(DG.nodes, vtype=GRB.BINARY)
+    B = m.addVars(DG.nodes, name='B', vtype=GRB.BINARY)
    
     # assignment constraints            
     m.addConstrs( gp.quicksum( X[i,j] for j in range(q) ) == B[i] for i in DG.nodes )

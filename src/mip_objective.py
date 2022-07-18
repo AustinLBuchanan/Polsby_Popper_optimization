@@ -17,17 +17,17 @@ def add_inverse_Polsby_Popper_objective(m, DG):
     # coef * z[j] is inverse Polsby-Popper score for district j
 
     coef = 1.0 / ( 2 * math.pi )
-    z = m.addVars(DG._k)#, lb=2*math.pi)
+    z = m.addVars(DG._k, name='z')#, lb=2*math.pi)
 
     # objective is to minimize average of inverse Polsby-Popper scores
     m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( z[j] for j in range(DG._k) ), GRB.MINIMIZE )
     
     # A[j] = area of district j
-    A = m.addVars(DG._k)
+    A = m.addVars(DG._k, name='A')
 
     # P[j] = perimeter of district j
-    P = m.addVars(DG._k)
-    
+    P = m.addVars(DG._k, name='P')
+
     # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
     m.addConstrs( P[j] * P[j] <= 2 * A[j] * z[j] for j in range(DG._k) )
 
@@ -45,18 +45,18 @@ def add_inverse_Polsby_Popper_objective(m, DG):
 def add_average_Polsby_Popper_objective(m, DG):
     
     # z[j] / coef is inverse Polsby-Popper score for district j
-    coef = 2 * math.pi 
-    z = m.addVars(DG._k, lb=coef)
+    coef = 2 * math.pi
+    z = m.addVars(DG._k, name='z', lb=coef )
 
     # coef * inv_z[j] = coef / z[j] is the Polsby-Popper score for district j
-    inv_z = m.addVars(DG._k, ub=1.0/coef) 
+    inv_z = m.addVars(DG._k, name='invz', ub=1.0/coef)
 
     # A[j] = area of district j
-    A = m.addVars(DG._k)
+    A = m.addVars(DG._k, name='A')
 
     # P[j] = perimeter of district j
-    P = m.addVars(DG._k)
-    
+    P = m.addVars(DG._k, name='P')
+
     # objective is to maximize average Polsby-Popper score
     m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( inv_z[j] for j in range(DG._k) ), GRB.MAXIMIZE )
 
