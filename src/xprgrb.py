@@ -186,6 +186,8 @@ class Model:
             #if self.Params.OutputFlag      is not None: self.xmodel.controls.OutputFlag      = self.Params.OutputFlag
             if self.Params.TimeLimit       is not None: self.xmodel.controls.maxtime       = self.Params.TimeLimit
 
+            # Ignore callback, the callbacks must have been added
+            # through self.xmodel.addcb* calls
             self.xmodel.solve()
 
 
@@ -209,6 +211,8 @@ class Model:
                 return self.xmodel.attributes.mipsols
             elif name == 'objVal':
                 return self.xmodel.attributes.mipobjval
+            elif name == 'objBound':
+                return self.xmodel.attributes.mipbestobjval
             elif name == 'NodeCount':
                 return self.xmodel.attributes.nodes
 
