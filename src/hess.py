@@ -75,7 +75,7 @@ def solve_hess_model(DG):
     for i in DG.nodes:
         for j in DG.nodes:
             if DG.nodes[i]['TOTPOP'] > DG.nodes[j]['TOTPOP']:
-                x[i,j].UB = 0
+                gp.setUB(x[i,j], m, 0)
                 
     m.optimize()
     grb_time = m.runtime
@@ -87,7 +87,7 @@ def solve_hess_model(DG):
     # undo diagonal fixing and re-solve for compactness
     for i in DG.nodes:
         for j in DG.nodes:
-            x[i,j].UB = 1
+            gp.setUB(x[i,j], m, 1)
         
     m.optimize()
     grb_time += m.runtime

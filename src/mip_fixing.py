@@ -13,7 +13,7 @@ def do_diagonal_fixing(m, DG):
     for p in range(DG.number_of_nodes()):
         i = DG._ordering[p]
         for j in range(p+1,DG._k):
-            m._x[i,j].UB = 0
+            gp.setUB(m._x[i,j], m, 0)
     return
             
 def do_L_fixing(m, DG):
@@ -33,7 +33,7 @@ def do_L_fixing(m, DG):
     for p in range(q,n):
         i = DG._ordering[p]
         for j in range(DG._k):
-            m._r[i,j].UB = 0
+            gp.setUB(m._r[i,j], m, 0)
 
     # vertex v_{q-1} cannot root districts {0, 1, ..., k-2}
     # vertex v_{q-2} cannot root districts {0, 1, ..., k-3}
@@ -44,7 +44,7 @@ def do_L_fixing(m, DG):
     for t in range(1,DG._k):
         i = DG._ordering[q-t]
         for j in range(DG._k-t):
-            m._r[i,j].UB = 0
+            gp.setUB(m._r[i,j], m, 0)
             
     return
       
@@ -65,20 +65,20 @@ def do_U_fixing(m, DG):
         if min_dist <= DG._U:
             break
 
-        m._r[v,j].LB = 1
-        m._x[v,j].LB = 1
+        gp.setLB(m._r[v,j], m, 1)
+        gp.setLB(m._x[v,j], m, 1)
 
         for t in range(DG._k):
             if t != j:
-                m._x[v,t].UB = 0
+                gp.setUB(m._x[v,t], m, 0)
 
         for i in DG.nodes:
             if i != v:
-                m._r[i,j].UB = 0
+                gp.setUB(m._r[i,j], m, 0)
 
         for i in DG.nodes:
             if i != v and dist[i] + DG.nodes[v]['TOTPOP'] > DG._U:
-                m._x[i,j].UB = 0
+                gp.setUB(m._x[i,j], m, 0)
     
     return
 
@@ -105,8 +105,8 @@ def reachable_population(DG, S, v):
 def do_cut_edge_fixing(m, DG):
     for u,v in DG.edges:
         for j in range(DG._k):
-            if m._x[u,j].UB < 0.5 or m._x[v,j].LB > 0.5:
-                m._y[u,v,j].UB = 0
-            elif m._x[u,j].LB > 0.5 and m._x[v,j].UB < 0.5:
-                m._y[u,v,j].LB = 1
+            if gp.getUB(m._x[u,j], m) < 0.5 or gp.getLB(m._x[v,j], m) > 0.5:
+                gp.setUB(m._y[u,v,j], m, 0)
+            elif gp.getLB(m._x[u,j], m) > 0.5 and gp.getUB(m._x[v,j], m) < 0.5:
+                gp.setLB(m._y[u,v,j], m, 1)
     return

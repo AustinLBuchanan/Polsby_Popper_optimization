@@ -59,7 +59,7 @@ def add_partitioning_orbitope_constraints(m, DG):
     m.addConstrs(u[DG._ordering[i],DG._k-1]+m._r[DG._ordering[i],DG._k-1] == u[DG._ordering[i+1],DG._k-1] for i in range(0,DG.number_of_nodes()-1))
     m.addConstrs(u[DG._ordering[DG.number_of_nodes()-1],j]+m._r[DG._ordering[DG.number_of_nodes()-1],j] == 0 for j in range(DG._k-1))
 
-    m._r[DG._ordering[0],0].LB=1
+    gp.setLB(m._r[DG._ordering[0],0], m, 1)
     m.addConstr( u[DG._ordering[DG.number_of_nodes()-1],DG._k-1] + m._r[DG._ordering[DG.number_of_nodes()-1],DG._k-1]==1 )  
     m.update()
     return
