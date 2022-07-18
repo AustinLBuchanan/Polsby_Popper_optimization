@@ -91,7 +91,11 @@ def get_orbitope_friendly_labeling(DG, unfriendly_labeling):
 
     
 def inject_warm_start(m, DG, labeling):
-    
+    global solver
+
+    if solver == 'xpress':
+        return inject_warm_start_xpress(m, DG, labeling)
+
     #print("In inject, labeling =",labeling)
     
     # initialize all variables to 0
@@ -122,3 +126,44 @@ def inject_warm_start(m, DG, labeling):
     
     m.update()
     return
+
+
+def inject_warm_start_xpress(m, DG, labeling):
+
+    sol = {}
+
+    # initialize all variables to 0
+    for i in DG._ordering:
+        for j in range(DG._k):
+            sol['x', i, j] = 0
+            sol['r', i, j] = 0
+
+    for u,v in DG.edges:
+        for j in range(DG._k):
+            sol['y', u, v, j] = 0
+
+    # now inject the nonzeros of our solution
+    root_found = { j : False for j in range(DG._k) }
+    for i in DG._ordering:
+
+        j = labeling[i]
+        sol['x', i, j] = 1
+
+        if not root_found[j]:
+            root_found[j] = True
+            sol['r', i, j] = 1
+
+    for u,v in DG.edges:
+        j = labeling[u]
+        if labeling[v] != j:
+            sol['y', u, v, j] = 1
+
+    solval = [sol['x', i, j]    for i in DG._ordering for j in range(DG._k)] + \
+             [sol['r', i, j]    for i in DG._ordering for j in range(DG._k)] + \
+             [sol['y', u, v, j] for u, v in DG.edges  for j in range(DG._k)]
+
+    solind = [m._x[i,j]   for i in DG._ordering for j in range(DG._k)] + \
+             [m._r[i,j]   for i in DG._ordering for j in range(DG._k)] + \
+             [m._y[u,v,j] for u,v in DG.edges   for j in range(DG._k)]
+
+    m.xmodel.addmipsol(solval, solind, name='mysol')
