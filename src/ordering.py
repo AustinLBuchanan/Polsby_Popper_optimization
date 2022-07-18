@@ -12,7 +12,7 @@ def find_ordering(DG, B):
 def solve_maxB_problem(DG):
     print("Solving the max B problem (as MIP) for use in the vertex ordering...") 
     m = gp.Model()
-    m.params.LogToConsole = 0 # keep log to a minimum
+    m.Params.LogToConsole = 0 # keep log to a minimum
     q = DG._k
     
     # X[i,j]=1 if vertex i is assigned to bin j
