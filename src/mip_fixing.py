@@ -1,4 +1,5 @@
 import networkx as nx
+import xprgrb as gp
 
 # main fixing function, that calls the others:
 def do_variable_fixing(m, DG):

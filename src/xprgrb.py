@@ -181,7 +181,7 @@ class Model:
             #if self.Params.LogToConsole    is not None: self.xmodel.controls.LogToConsole    = self.Params.LogToConsole
             #if self.Params.Method          is not None: self.xmodel.controls.Method          = self.Params.Method
             #if self.Params.MIPFocus        is not None: self.xmodel.controls.MIPFocus        = self.Params.MIPFocus
-            if self.Params.MIPGap          is not None: self.xmodel.controls.mipgap          = self.Params.MIPGap
+            if self.Params.MIPGap          is not None: self.xmodel.controls.miprelstop      = self.Params.MIPGap
             #if self.Params.NonConvex       is not None: self.xmodel.controls.NonConvex       = self.Params.NonConvex
             #if self.Params.OutputFlag      is not None: self.xmodel.controls.OutputFlag      = self.Params.OutputFlag
             if self.Params.TimeLimit       is not None: self.xmodel.controls.maxtime       = self.Params.TimeLimit
@@ -200,11 +200,18 @@ class Model:
             return getattr(self.gmodel, name)
         else:
             if name == 'status':
-                return {xp.mip_infeas: gurobipy.GRB.INFEASIBLE,
-                        xp.mip_optimal: gurobipy.GRB.OPTIMAL,
+                return {xp.mip_infeas:   gurobipy.GRB.INFEASIBLE,
+                        xp.mip_optimal:  gurobipy.GRB.OPTIMAL,
                         xp.mip_solution: gurobipy.GRB.TIME_LIMIT}[self.xmodel.getProbStatus()]
             elif name == 'runtime':
                 return self.xmodel.attributes.time
+            elif name == 'solCount':
+                return self.xmodel.attributes.mipsols
+            elif name == 'objVal':
+                return self.xmodel.attributes.mipobjval
+            elif name == 'NodeCount':
+                return self.xmodel.attributes.nodes
+
 
     def __setattr__ (self, name, value):
 
@@ -215,6 +222,15 @@ class Model:
                 return object.__setattr__(self.gmodel, name, value)
             else:
                 return object.__setattr__(self, name, value)
+
+
+    def remove (self, *objects):
+        if solver == 'gurobi':
+            self.gmodel.remove(*objects)
+        else:
+            for c in objects[0]:
+                for i in c:
+                    self.xmodel.delConstraint(i)
 
 
 GRB = gurobipy.GRB
