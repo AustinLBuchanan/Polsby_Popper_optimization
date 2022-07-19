@@ -71,7 +71,6 @@ def add_average_Polsby_Popper_objective(m, DG):
         m.Params.NonConvex = 2
 
     else:
-        pass
         assert m.xmodel is not None
         # Do not add nonconvex constraint, but add explicit callbacks
         m.xmodel.addcbintsol(xpress_chksol_cb, m, 1)
