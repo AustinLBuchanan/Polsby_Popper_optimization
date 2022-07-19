@@ -68,7 +68,7 @@ def lcut_callback(m, where):
     return
 
 
-def lcut_callback_xpress(prob, m):
+def lcut_callback_xpress_preintsol(prob, m, soltype, cutoff):
 
     DG = m._DG
 
@@ -85,6 +85,11 @@ def lcut_callback_xpress(prob, m):
 
         # what shall we deem as the "root" of this district? call it b
         roots = [ i for i in DG.nodes if rval[i,j] > 0.5 ]
+
+        # if b does not exist, skip to the next district
+        if len(roots) < 1:
+            continue
+
         b = roots[0]
 
         # for each component that doesn't contain b, add a cut
@@ -129,18 +134,96 @@ def lcut_callback_xpress(prob, m):
                     for node in DG.neighbors(c):
                         DG[c][node]['lcutweight'] = DG._U + 1
 
-            # add cut
             minC = [ c for c in C if c not in drop_from_C ]
 
-            indices = [m._x[a,j], m._x[b,j]] + [m._x[c,j] for c in minC]
-            coeffs = [1,         1]         + [-1] * len(minC)
-            rhs = 1
+            if xval[a,j] + xval[b,j] - sum(xval[c,j] for c in minC) > 1 + prob.controls.feastol:
+                return (1, cutoff)
 
-            mcolsp, dvalp = [], []
-            drhsp, status = prob.presolverow('L', indices, coeffs, rhs, prob.attributes.cols,
-                                             mcolsp, dvalp)
-            if status >= 0:
-                prob.addcuts([123], ['L'], [drhsp], [0, len(mcolsp)], mcolsp, dvalp)
+    return (0, cutoff)
+
+
+def lcut_callback_xpress_optnode(prob, m):
+
+    DG = m._DG
+
+    x = []
+    prob.getlpsol(x)
+
+    xval = {(i,j): x[m.xmodel.getIndex(m._x[i,j])] for i in DG.nodes for j in range(DG._k)}
+    rval = {(i,j): x[m.xmodel.getIndex(m._r[i,j])] for i in DG.nodes for j in range(DG._k)}
+
+    for j in range(DG._k):
+
+        # vertices assigned to this district (label j)
+        S = [ v for v in DG.nodes if xval[v,j] > 0.5 ]
+
+        # what shall we deem as the "root" of this district? call it b
+        roots = [ i for i in DG.nodes if rval[i,j] > 0.5 ]
+
+        # if b does not exist, skip to the next district
+        if len(roots) < 1:
+            continue
+
+        b = roots[0]
+
+        # for each component that doesn't contain b, add a cut
+        for component in nx.strongly_connected_components(DG.subgraph(S)):
+
+            if b in component:
+                continue
+
+            # find some vertex "a" that has largest population in this component
+            maxp = max( DG.nodes[v]['TOTPOP'] for v in component)
+            maxp_vertices = [ v for v in component if DG.nodes[v]['TOTPOP'] == maxp ]
+            a = maxp_vertices[0]
+
+            # get minimal a,b-separator
+            C = find_fischetti_separator(DG, component, b)
+
+            # make it a minimal *length-U* a,b-separator
+            for (u,v) in DG.edges():
+                DG[u][v]['lcutweight'] = DG.nodes[u]['TOTPOP']
+
+            # "remove" C from graph
+            for c in C:
+                for node in DG.neighbors(c):
+                    DG[c][node]['lcutweight'] = DG._U+1
+
+            # is C\{c} a length-U a,b-separator still? If so, remove c from C
+            drop_from_C = []
+            for c in C:
+
+                # temporarily add c back to graph (i.e., "remove" c from cut C)
+                for node in DG.neighbors(c):
+                    DG[c][node]['lcutweight'] = DG.nodes[c]['TOTPOP']
+
+                # what is distance from a to b in G-C ?
+                distance_from_a = nx.single_source_dijkstra_path_length(DG, a, weight='lcutweight')
+
+                if distance_from_a[b] + DG.nodes[b]['TOTPOP'] > DG._U:
+                    # c was not needed in the cut C. delete c from C
+                    drop_from_C.append(c)
+                else:
+                    # keep c in C. revert arc weights back to "infinity"
+                    for node in DG.neighbors(c):
+                        DG[c][node]['lcutweight'] = DG._U + 1
+
+            minC = [ c for c in C if c not in drop_from_C ]
+
+            if xval[a,j] + xval[b,j] - sum(xval[c,j] for c in minC) > 1 + prob.controls.feastol:
+
+                # add cut
+
+                indices = [m._x[a,j], m._x[b,j]] + [m._x[c,j] for c in minC]
+                coeffs  = [1,         1]         + [-1] * len(minC)
+                rhs = 1
+
+                mcolsp, dvalp = [], []
+                drhsp, status = prob.presolverow('L', indices, coeffs, rhs, prob.attributes.cols,
+                                                 mcolsp, dvalp)
+
+                if status >= 0:
+                    prob.addcuts([1], ['L'], [drhsp], [0, len(mcolsp)], mcolsp, dvalp)
 
     return 0
 
