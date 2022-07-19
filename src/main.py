@@ -106,7 +106,8 @@ def main():
             m._callback = mip_contiguity.lcut_callback
         else:
             assert m.xmodel is not None
-            m.xmodel.addcbintsol(mip_contiguity.lcut_callback_xpress, m, 1)
+            m.xmodel.addcboptnode(mip_contiguity.lcut_callback_xpress_optnode,     m, 1)
+            m.xmodel.addcbpreintsol(mip_contiguity.lcut_callback_xpress_preintsol, m, 1)
 
     elif contiguity == 'scf':
         mip_contiguity.add_scf_constraints(m, DG)
