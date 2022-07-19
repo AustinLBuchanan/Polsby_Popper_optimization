@@ -189,7 +189,7 @@ class Model:
             # Ignore callback, the callbacks must have been added
             # through self.xmodel.addcb* calls
             self.xmodel.solve()
-
+            self.xmodel.postsolve()
 
     def update(self):
         if solver == 'gurobi':
