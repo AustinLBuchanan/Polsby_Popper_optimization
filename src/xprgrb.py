@@ -88,6 +88,7 @@ class Model:
         self.xmodel = None
         self.Params = Params()
         self._callback = None
+        self._DG = None
 
         if solver == 'gurobi':
             self.gmodel = gurobipy.Model()
@@ -219,7 +220,7 @@ class Model:
 
     def __setattr__ (self, name, value):
 
-        if name in ['gmodel', 'xmodel', 'Params', '_callback']:
+        if name in ['gmodel', 'xmodel', 'Params', '_callback', '_DG']:
             return object.__setattr__(self, name, value)
         else:
             if solver == 'gurobi':
