@@ -47,10 +47,10 @@ def add_average_Polsby_Popper_objective(m, DG):
     
     # z[j] / coef is inverse Polsby-Popper score for district j
     coef = 2 * math.pi
-    z = m.addVars(DG._k, name='z', lb=coef )
+    m._z = m.addVars(DG._k, name='z', lb=coef )
 
     # coef * inv_z[j] = coef / z[j] is the Polsby-Popper score for district j
-    inv_z = m.addVars(DG._k, name='invz', ub=1.0/coef)
+    m._inv_z = m.addVars(DG._k, name='invz', ub=1.0/coef)
 
     # A[j] = area of district j
     A = m.addVars(DG._k, name='A')
@@ -59,15 +59,15 @@ def add_average_Polsby_Popper_objective(m, DG):
     P = m.addVars(DG._k, name='P')
 
     # objective is to maximize average Polsby-Popper score
-    m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( inv_z[j] for j in range(DG._k) ), GRB.MAXIMIZE )
+    m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( m._inv_z[j] for j in range(DG._k) ), GRB.MAXIMIZE )
 
     # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
-    m.addConstrs( P[j] * P[j] <= 2 * A[j] * z[j] for j in range(DG._k) )
+    m.addConstrs( P[j] * P[j] <= 2 * A[j] * m._z[j] for j in range(DG._k) )
 
     if solver == 'gurobi':
 
         # impose inv_z = 1 / z through non-convex constraint:
-        m.addConstrs( z[j] * inv_z[j] == 1 for j in range(DG._k) )
+        m.addConstrs( m._z[j] * m._inv_z[j] == 1 for j in range(DG._k) )
         m.Params.NonConvex = 2
 
     else:
