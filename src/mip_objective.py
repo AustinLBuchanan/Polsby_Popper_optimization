@@ -1,6 +1,6 @@
 import xprgrb as gp
 from xprgrb import GRB, solver
-from mip_callback import xpress_branch_cb, xpress_cut_cb
+from mip_callback import xpress_branch_cb, xpress_cut_cb, xpress_chksol_cb
 import math
 
 def add_cut_edges_objective(m, DG):
@@ -43,7 +43,10 @@ def add_inverse_Polsby_Popper_objective(m, DG):
     m.update()
     return
 
+
 def add_average_Polsby_Popper_objective(m, DG):
+
+    m._DG = DG
     
     # z[j] / coef is inverse Polsby-Popper score for district j
     coef = 2 * math.pi
@@ -71,9 +74,21 @@ def add_average_Polsby_Popper_objective(m, DG):
         m.Params.NonConvex = 2
 
     else:
+
+        # Add initial OA cuts for z, inv_z:
+        #
+        # y >= g(x) ===> y >= g(x*) + g'(x*) (x - x*)
+        #
+        # inv_z >= 1/z* -1/(z*)^2 * (z - z*)
+        # z*^2 * inv_z + z >= 2*z*
+        m.addConstrs(z0**2 * m._inv_z[j] + m._z[j] >= 2*z0 for z0 in [coef*i for i in range(1, 5)] for j in range(DG._k))
+
+        m.xmodel.loadsecurevecs(rowind=None, colind=[m._z[j]     for j in range(DG._k)] +
+                                                    [m._inv_z[j] for j in range(DG._k)])
+
         assert m.xmodel is not None
         # Do not add nonconvex constraint, but add explicit callbacks
-        m.xmodel.addcbintsol(xpress_chksol_cb, m, 1)
+        m.xmodel.addcbpreintsol(xpress_chksol_cb, m, 1)
         m.xmodel.addcboptnode(xpress_cut_cb, m, 1)
         m.xmodel.addcbchgbranchobject(xpress_branch_cb, m, 1)
 
