@@ -72,8 +72,11 @@ def lcut_callback_xpress_preintsol(prob, m, soltype, cutoff):
 
     DG = m._DG
 
-    x = []
-    prob.getlpsol(x)
+    try:
+        x = []
+        prob.getlpsol(x)
+    except:
+        return (1, 0)
 
     xval = {(i,j): x[m.xmodel.getIndex(m._x[i,j])] for i in DG.nodes for j in range(DG._k)}
     rval = {(i,j): x[m.xmodel.getIndex(m._r[i,j])] for i in DG.nodes for j in range(DG._k)}
@@ -142,7 +145,7 @@ def lcut_callback_xpress_preintsol(prob, m, soltype, cutoff):
     return (0, cutoff)
 
 
-def lcut_callback_xpress_optnode(prob, m):
+def lcut_callback_xpress_optnode(prob, m, sol, lb, ub):
 
     DG = m._DG
 

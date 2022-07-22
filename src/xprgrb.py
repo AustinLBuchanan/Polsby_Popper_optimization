@@ -220,7 +220,7 @@ class Model:
 
     def __setattr__ (self, name, value):
 
-        if name in ['gmodel', 'xmodel', 'Params', '_callback', '_DG']:
+        if name in ['gmodel', 'xmodel', 'Params', '_callback', '_DG', '_obj_coef', '_contiguity', '_objective', '_xpress_bestobj']:
             return object.__setattr__(self, name, value)
         else:
             if solver == 'gurobi':

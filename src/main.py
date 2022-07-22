@@ -75,10 +75,14 @@ def main():
     
     # Build base MIP model
     m = mip.build_base_mip(DG)
+
     m._numCallbacks = 0
     m._numLazyCuts = 0
     m._callback = None
-    
+    m._objective = objective
+    m._contiguity = contiguity
+    m._xpress_bestobj = -1e10
+
     # Add objective (and any related constraints)
     if objective == 'cut':
         mip_objective.add_cut_edges_objective(m, DG)
@@ -96,7 +100,11 @@ def main():
     (B, B_time) = ordering.solve_maxB_problem(DG)
     (result['B_size'], result['B_time']) = ( len(B), '{0:.2f}'.format(B_time) )
     DG._ordering = ordering.find_ordering(DG, B)
-    
+
+    if (contiguity == 'lcut' or objective == 'avepp') and \
+       solver == 'xpress':
+        m.xmodel.addcboptnode(mip_callback.xpress_cut_cb, m, 1)
+
     # Add contiguity constraints
     if contiguity == 'lcut':
         m._DG = DG
@@ -106,7 +114,6 @@ def main():
             m._callback = mip_contiguity.lcut_callback
         else:
             assert m.xmodel is not None
-            m.xmodel.addcboptnode(mip_contiguity.lcut_callback_xpress_optnode,     m, 1)
             m.xmodel.addcbpreintsol(mip_contiguity.lcut_callback_xpress_preintsol, m, 1)
 
     elif contiguity == 'scf':

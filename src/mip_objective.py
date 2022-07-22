@@ -50,6 +50,7 @@ def add_average_Polsby_Popper_objective(m, DG):
     
     # z[j] / coef is inverse Polsby-Popper score for district j
     coef = 2 * math.pi
+    m._obj_coef = coef / DG._k
     m._z = m.addVars(DG._k, name='z', lb=coef )
 
     # coef * inv_z[j] = coef / z[j] is the Polsby-Popper score for district j
