@@ -90,14 +90,15 @@ def add_average_Polsby_Popper_objective(m, DG):
         # side of the convex envelope
         m.addConstrs(m._inv_z[j] * m._z[j] >= 1 for j in range(DG._k))
 
+        # Establish that z and inv_z should NOT be presolved away
         m.xmodel.loadsecurevecs(rowind=None, colind=[m._z[j]     for j in range(DG._k)] +
                                                     [m._inv_z[j] for j in range(DG._k)])
 
         assert m.xmodel is not None
         # Do not add nonconvex constraint, but add explicit callbacks
-        m.xmodel.addcbpreintsol(xpress_chksol_cb, m, 1)
-        m.xmodel.addcboptnode(xpress_cut_cb, m, 1)
-        m.xmodel.addcbchgbranchobject(xpress_branch_cb, m, 1)
+        m.xmodel.addcbpreintsol(xpress_chksol_cb, m, 1)  # Callback for checking if solution is integer
+        m.xmodel.addcboptnode(xpress_cut_cb, m, 1)  # Callback for adding lcut inequalities (if specified) and secant cuts for inv_z = 1/z
+        m.xmodel.addcbchgbranchobject(xpress_branch_cb, m, 1)  # Callback for branching on the z's
 
     # add constraints on areas A[j] 
     m.addConstrs( A[j] == gp.quicksum( DG.nodes[i]['area'] * m._x[i,j] for i in DG.nodes ) for j in range(DG._k) )

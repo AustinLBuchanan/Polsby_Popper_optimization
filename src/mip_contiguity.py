@@ -149,11 +149,8 @@ def lcut_callback_xpress_optnode(prob, m, sol, lb, ub):
 
     DG = m._DG
 
-    x = []
-    prob.getlpsol(x)
-
-    xval = {(i,j): x[m.xmodel.getIndex(m._x[i,j])] for i in DG.nodes for j in range(DG._k)}
-    rval = {(i,j): x[m.xmodel.getIndex(m._r[i,j])] for i in DG.nodes for j in range(DG._k)}
+    xval = {(i,j): sol[m.xmodel.getIndex(m._x[i,j])] for i in DG.nodes for j in range(DG._k)}
+    rval = {(i,j): sol[m.xmodel.getIndex(m._r[i,j])] for i in DG.nodes for j in range(DG._k)}
 
     for j in range(DG._k):
 

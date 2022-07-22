@@ -3,10 +3,6 @@ from xprgrb import GRB, solver
 import xpress as xp
 import numpy as np
 import mip_contiguity
-import math
-
-
-def gen_callback(m, where):
 
 
 def xpress_cut_cb(prob, m):
