@@ -81,7 +81,13 @@ def add_average_Polsby_Popper_objective(m, DG):
         #
         # inv_z >= 1/z* -1/(z*)^2 * (z - z*)
         # z*^2 * inv_z + z >= 2*z*
-        m.addConstrs(z0**2 * m._inv_z[j] + m._z[j] >= 2*z0 for z0 in [coef*i for i in range(1, 5)] for j in range(DG._k))
+        #
+        # n_init_OA = 4
+        # m.addConstrs(z0**2 * m._inv_z[j] + m._z[j] >= 2*z0 for z0 in [coef*i for i in range(1, n_init_OA + 1)] for j in range(DG._k))
+
+        # Add convex constraint y >= 1/z, which only takes care of one
+        # side of the convex envelope
+        m.addConstrs(m._inv_z[j] * m._z[j] >= 1 for j in range(DG._k))
 
         m.xmodel.loadsecurevecs(rowind=None, colind=[m._z[j]     for j in range(DG._k)] +
                                                     [m._inv_z[j] for j in range(DG._k)])
