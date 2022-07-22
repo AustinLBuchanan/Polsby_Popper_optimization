@@ -88,7 +88,6 @@ class Model:
         self.xmodel = None
         self.Params = Params()
         self._callback = None
-        self._DG = None
 
         if solver == 'gurobi':
             self.gmodel = gurobipy.Model()
@@ -96,6 +95,8 @@ class Model:
             self.xmodel = xp.problem()
         else:
             raise RuntimeError('Solver must be "gurobi" or "xpress"')
+
+        self._DG = None
 
 
     def addcallback(callback, type):
@@ -220,13 +221,11 @@ class Model:
 
     def __setattr__ (self, name, value):
 
-        if name in ['gmodel', 'xmodel', 'Params', '_callback', '_DG', '_obj_coef', '_contiguity', '_objective', '_xpress_bestobj']:
+        if name in ['gmodel', 'xmodel', 'Params', '_callback', '_obj_coef', '_contiguity', '_objective', '_xpress_bestobj'] or \
+           solver == 'xpress':
             return object.__setattr__(self, name, value)
         else:
-            if solver == 'gurobi':
-                return object.__setattr__(self.gmodel, name, value)
-            else:
-                return object.__setattr__(self, name, value)
+            return object.__setattr__(self.gmodel, name, value)
 
 
     def remove (self, *objects):
