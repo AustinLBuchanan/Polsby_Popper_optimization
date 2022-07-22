@@ -125,6 +125,8 @@ def main():
         hess_time = 0.00
         print("ERROR: warm start heuristic assumes level in {county,tract}")
     result['hess_time'] = '{0:.2f}'.format(hess_time)
+
+    ls_labeling = False
     
     # MIP-based local search
     if hess_labeling:
