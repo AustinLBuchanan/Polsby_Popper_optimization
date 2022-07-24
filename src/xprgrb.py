@@ -204,9 +204,19 @@ class Model:
             return getattr(self.gmodel, name)
         else:
             if name == 'status':
-                return {xp.mip_infeas:   gurobipy.GRB.INFEASIBLE,
-                        xp.mip_optimal:  gurobipy.GRB.OPTIMAL,
-                        xp.mip_solution: gurobipy.GRB.TIME_LIMIT}[self.xmodel.getProbStatus()]
+
+                grb2xprdict = {
+                    xp.mip_unbounded: gurobipy.GRB.UNBOUNDED,
+                    xp.mip_infeas:    gurobipy.GRB.INFEASIBLE,
+                    xp.mip_optimal:   gurobipy.GRB.OPTIMAL,
+                    xp.mip_solution:  gurobipy.GRB.TIME_LIMIT}
+                status = self.xmodel.getProbStatus()
+
+                if status in grb2xprdict:
+                    return grb2xprdict[status]
+                else:
+                    return gurobipy.GRB.INF_OR_UNBD
+
             elif name == 'runtime':
                 return self.xmodel.attributes.time
             elif name == 'solCount':
