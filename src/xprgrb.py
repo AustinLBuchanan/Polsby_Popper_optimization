@@ -190,8 +190,11 @@ class Model:
 
             # Ignore callback, the callbacks must have been added
             # through self.xmodel.addcb* calls
+            self.xmodel.controls.miplog = 0
+            self.xmodel.controls.outputlog = 0
             self.xmodel.solve()
             self.xmodel.postsolve()
+
 
     def update(self):
         if solver == 'gurobi':
