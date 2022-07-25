@@ -86,11 +86,6 @@ def xpress_branch_cb(prob, m, branch):
     except:
         return branch
 
-    indx = np.array([m.xmodel.getIndex(m._x[i,j]) for i in DG.nodes for j in range(DG._k)])
-    #indy = np.array([m.xmodel.getIndex(m._y[u,v,j]) for u,v in DG.edges for j in range(DG._k)])
-
-    x = sol[indx]
-
     indz  = np.array([m.xmodel.getIndex(m._z[i])     for i in range(DG._k)])
     indiz = np.array([m.xmodel.getIndex(m._inv_z[i]) for i in range(DG._k)])
 
@@ -292,7 +287,7 @@ def xpress_chksol_cb(prob, m, soltype, cutoff):
         x[indiz[i]] = 1/x[indz[i]]
 
     objval = m._obj_coef * sum(1.0 / zval[i] for i in range(DG._k))
-    if objval > m._xpress_bestobj + 1e-6:
+    if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
         m._xpress_bestobj = objval
         prob.addmipsol(x)
 

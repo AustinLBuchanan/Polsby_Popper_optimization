@@ -81,7 +81,6 @@ def main():
     m._callback = None
     m._objective = objective
     m._contiguity = contiguity
-    m._xpress_bestobj = -1e10
 
     # Add objective (and any related constraints)
     if objective == 'cut':
