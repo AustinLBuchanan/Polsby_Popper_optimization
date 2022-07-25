@@ -188,6 +188,8 @@ class Model:
             #if self.Params.OutputFlag      is not None: self.xmodel.controls.OutputFlag      = self.Params.OutputFlag
             if self.Params.TimeLimit       is not None: self.xmodel.controls.maxtime       = -abs(self.Params.TimeLimit)  # negative to stop if solution not found
 
+            self._xpress_bestobj = -1e20
+
             # Ignore callback, the callbacks must have been added
             # through self.xmodel.addcb* calls
             self.xmodel.controls.miplog = 0
