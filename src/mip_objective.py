@@ -4,6 +4,13 @@ from mip_callback import xpress_branch_cb, xpress_cut_cb, xpress_chksol_cb
 import math
 
 def add_cut_edges_objective(m, DG):
+
+    # add strengthening vars/constraints:
+    # edge {u,v} is cut <=> arc (u,v) is cut <=> arc (v,u) is cut
+    undirected_edges = [ (u,v) for u,v in DG.edges if u<v ]
+    m._is_cut = m.addVars( undirected_edges, name='iscut', vtype=GRB.BINARY )
+    m.addConstrs( m._is_cut[min(u,v),max(u,v)] == gp.quicksum( m._y[u,v,j] for j in range(DG._k) ) for u,v in DG.edges )
+
     m.setObjective( gp.quicksum( m._is_cut ), GRB.MINIMIZE )
     return
 
