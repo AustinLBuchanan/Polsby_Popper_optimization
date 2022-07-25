@@ -3,7 +3,7 @@ from xprgrb import GRB, solver
 import xpress as xp
 import numpy as np
 import mip_contiguity
-
+import random
 
 def xpress_cut_cb(prob, m):
     """
@@ -289,7 +289,9 @@ def xpress_chksol_cb(prob, m, soltype, cutoff):
     objval = m._obj_coef * sum(1.0 / zval[i] for i in range(DG._k))
     if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
         m._xpress_bestobj = objval
-        prob.addmipsol(x)
+        name = f'sol_{random.randint(10000,20000)}'
+        #print(f"Added solution {name} with objective {objval}")
+        prob.addmipsol(x, name=name)
 
     if maxviol > prob.controls.feastol:
         if soltype == 0:
