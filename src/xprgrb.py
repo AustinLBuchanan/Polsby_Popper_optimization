@@ -129,6 +129,9 @@ class Model:
         if solver == 'gurobi':
             return self.gmodel.addVar(**params)
         elif solver == 'xpress':
+            if 'vtype' in params.keys():
+                params['vartype'] = {'B': xp.binary, 'I': xp.integer, 'C': xp.continuous} [params['vtype']]
+                del params['vtype']
             x = xp.var(**params)
             self.xmodel.addVariable(x)
             return x
