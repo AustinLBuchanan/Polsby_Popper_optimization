@@ -17,7 +17,7 @@ def build_base_mip(DG):
     if solver == 'gurobi':
         m._y = m.addVars(DG.edges, DG._k, name='y', vtype=GRB.BINARY)
     else:
-        m._y = m.addVars([(u,v,j) for (u,v) in DG.edges for j in range(DG._k)], name='y', vtype=GRB.BINARY)
+        m._y = {(u,v,j): m.addVar(name=f'y_{u}_{v}_{j}', vtype=GRB.BINARY) for (u,v) in DG.edges for j in range(DG._k)}
 
     # add constraints saying that each node i is assigned to one district
     m.addConstrs( gp.quicksum( m._x[i,j] for j in range(DG._k)) == 1 for i in DG.nodes )
