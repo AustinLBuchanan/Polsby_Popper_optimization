@@ -290,14 +290,16 @@ def xpress_chksol_cb(prob, m, soltype, cutoff):
     if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
         m._xpress_bestobj = objval
         name = f'sol_{random.randint(10000,20000)}'
-        #print(f"Added solution {name} with objective {objval}")
+        print(f"Added solution {name} with objective {objval}")
         prob.addmipsol(x, name=name)
+
+    cutoff = objval
 
     if maxviol > prob.controls.feastol:
         if soltype == 0:
             #print(f"node solution: {m._obj_coef * sum(1.0/zval[i] for i in range(DG._k))}, reported: {cutoff}")
-            return (0, m._obj_coef * sum(1.0/zval[i] for i in range(DG._k)))
+            return (0, cutoff)  # m._obj_coef * sum(1.0/zval[i] for i in range(DG._k)))
         return (1, 0)
     else:
         #print(f"computed: {m._obj_coef * sum(1.0/zval[i] for i in range(DG._k))}, reported: {cutoff}")
-        return (0, cutoff) # m._obj_coef * sum(1.0/zval[i] for i in range(DG._k)))
+        return (0, cutoff)  # m._obj_coef * sum(1.0/zval[i] for i in range(DG._k)))
