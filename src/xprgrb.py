@@ -183,7 +183,7 @@ class Model:
             if self.Params.FeasibilityTol  is not None: self.xmodel.controls.feastol         = self.Params.FeasibilityTol
             if self.Params.IntFeasTol      is not None: self.xmodel.controls.miptol          = self.Params.IntFeasTol
             #if self.Params.LazyConstraints is not None: self.xmodel.controls.LazyConstraints = self.Params.LazyConstraints
-            #if self.Params.LogToConsole    is not None: self.xmodel.controls.LogToConsole    = self.Params.LogToConsole
+            if self.Params.LogToConsole    is not None: self.xmodel.controls.outputlog    = self.Params.LogToConsole
             #if self.Params.Method          is not None: self.xmodel.controls.Method          = self.Params.Method
             #if self.Params.MIPFocus        is not None: self.xmodel.controls.MIPFocus        = self.Params.MIPFocus
             if self.Params.MIPGap          is not None: self.xmodel.controls.miprelstop      = self.Params.MIPGap
@@ -195,8 +195,8 @@ class Model:
 
             # Ignore callback, the callbacks must have been added
             # through self.xmodel.addcb* calls
-            self.xmodel.controls.miplog = 0
-            self.xmodel.controls.outputlog = 0
+            #self.xmodel.controls.miplog = 0
+            #self.xmodel.controls.outputlog = 0
             self.xmodel.solve()
             self.xmodel.postsolve()
 
