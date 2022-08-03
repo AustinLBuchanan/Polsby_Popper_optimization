@@ -7,7 +7,7 @@ import random
 
 def xpress_cut_cb(prob, m):
     """
-    Wrapper for the secant+OA separator and the lcut separator
+    Wrapper for the secant separator and the lcut separator
     """
 
     # Bit 7 is set if the solution is valid
