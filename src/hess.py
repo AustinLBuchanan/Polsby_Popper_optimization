@@ -1,6 +1,7 @@
 import networkx as nx
 import xprgrb as gp
 from xprgrb import GRB, solver
+import xpress as xp
 from pyproj import Proj
 import random
 from mip_contiguity import most_possible_nodes_in_one_district
@@ -214,9 +215,14 @@ def hess_heuristic(DG, impose_contiguity=True):
             means_y = [ sum( DG.nodes[i]['TOTPOP'] * DG.nodes[i]['Y'] * gp.getsol(x[i,j],m) for i in DG.nodes ) / population[j] for j in range(DG._k) ]
 
     # now solve as an IP
-    for i in DG.nodes:
-        for j in range(DG._k):
-            x[i,j].vtype = GRB.BINARY
+    global solver
+
+    if solver == 'gurobi':
+        for i in DG.nodes:
+            for j in range(DG._k):
+                x[i,j].vtype = GRB.BINARY
+    else:
+        m.xmodel.chgcoltype([x[i,j] for i in DG.nodes for j in range(DG._k)], ['B'] * DG._k * len(DG.nodes))
 
     # get clusters
     m.setObjective( gp.quicksum( DG.nodes[i]['TOTPOP'] * sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) * x[i,j] for i in DG.nodes for j in range(DG._k)), GRB.MINIMIZE )
