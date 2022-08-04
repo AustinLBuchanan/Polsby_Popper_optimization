@@ -32,6 +32,12 @@ def build_base_mip(DG):
     # add constraints saying that edge {u,v} is cut if u is assigned to district j but v is not.
     m.addConstrs( m._x[u,j] - m._x[v,j] <= m._y[u,v,j] for u,v in DG.edges for j in range(DG._k) )
 
+    # add strengthening vars/constraints:
+    # edge {u,v} is cut <=> arc (u,v) is cut <=> arc (v,u) is cut
+    undirected_edges = [ (u,v) for u,v in DG.edges if u<v ]
+    m._is_cut = m.addVars( undirected_edges, name='iscut', vtype=GRB.BINARY )
+    m.addConstrs( m._is_cut[min(u,v),max(u,v)] == gp.quicksum( m._y[u,v,j] for j in range(DG._k) ) for u,v in DG.edges )
+
     m.update()
     return m
     
