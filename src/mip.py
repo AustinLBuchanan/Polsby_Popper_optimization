@@ -160,7 +160,7 @@ def inject_warm_start_xpress(m, DG, labeling):
              [m._r[i,j]   for i in DG._ordering for j in range(DG._k)] + \
              [m._y[u,v,j] for u,v in DG.edges   for j in range(DG._k)]
 
-    if solver == 'xpress' and m._objective == 'avepp':
+    if m._objective == 'avepp':
         m._stored_solutions.append((0, solval, solind))
     else:
         m.xmodel.addmipsol(solval, solind, name='mysol')
