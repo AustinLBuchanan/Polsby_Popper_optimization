@@ -202,6 +202,36 @@ def xpress_cut_nonconvex(prob, m, sol, lb, ub):
         else:
             print("unpresolvable OA row")
 
+    # Extra: check if binaries are integer and add correct solution
+    # (moved from chksol as a preintsol callback is not the right
+    # place to call addmipsol).
+
+    if prob.attributes.mipinfeas == 0:
+
+        for i in range(DG._k):
+            sol[indiz[i]] = 1/sol[indz[i]]
+
+        objval = m._obj_coef * sum(1.0 / zval[i] for i in range(DG._k))
+        if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
+            m._xpress_bestobj = objval
+            name = f'sol_{random.randint(10000,20000)}'
+            print(f"Adding node solution {name} with objective {objval}")
+            prob.addmipsol(sol, name=name)
+
+    # For the same reason as above, check if there are stored
+    # solutions and add them, then wipe them from the global solution
+    # pool.
+
+    if len(m._stored_solutions) > 0:
+        for (obj, stored) in m._stored_solutions:
+            if obj > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
+                m._xpress_bestobj = obj
+                name = f'sol_{random.randint(10000,20000)}'
+                print(f"Adding stored solution {name} with objective {obj}")
+                prob.addmipsol(stored, name=name)
+
+        m._stored_solutions = []
+
     return 0
 
 

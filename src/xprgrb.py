@@ -88,6 +88,7 @@ class Model:
         self.xmodel = None
         self.Params = Params()
         self._callback = None
+        self._stored_solutions = []
 
         if solver == 'gurobi':
             self.gmodel = gurobipy.Model()
