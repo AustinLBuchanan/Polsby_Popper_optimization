@@ -231,9 +231,9 @@ class Model:
             elif name == 'solCount':
                 return self.xmodel.attributes.mipsols
             elif name == 'objVal':
-                return self.xmodel.attributes.mipobjval
-            elif name == 'objBound':
                 return self.xmodel.attributes.mipbestobjval
+            elif name == 'objBound':
+                return self.xmodel.attributes.bestbound
             elif name == 'NodeCount':
                 return self.xmodel.attributes.nodes
 
