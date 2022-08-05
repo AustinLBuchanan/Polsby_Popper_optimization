@@ -223,12 +223,15 @@ def xpress_cut_nonconvex(prob, m, sol, lb, ub):
     # pool.
 
     if len(m._stored_solutions) > 0:
-        for (obj, stored) in m._stored_solutions:
+        for (obj, stored, ind) in m._stored_solutions:
             if obj > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
                 m._xpress_bestobj = obj
                 name = f'sol_{random.randint(10000,20000)}'
                 print(f"Adding stored solution {name} with objective {obj}")
-                prob.addmipsol(stored, name=name)
+                if ind is None:
+                    prob.addmipsol(stored, name=name)
+                else:
+                    prob.addmipsol(stored, ind, name=name)
 
         m._stored_solutions = []
 
@@ -320,16 +323,17 @@ def xpress_chksol_cb(prob, m, soltype, cutoff):
     if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
         m._xpress_bestobj = objval
         name = f'sol_{random.randint(10000,20000)}'
-        print(f"Added solution {name} with objective {objval}")
-        prob.addmipsol(x, name=name)
+        print(f"Adding solution {name} with objective {objval}")
+        m._stored_solutions.append((objval, x, None))
 
     cutoff = objval
 
     if maxviol > prob.controls.feastol:
         if soltype == 0:
-            #print(f"node solution: {m._obj_coef * sum(1.0/zval[i] for i in range(DG._k))}, reported: {cutoff}")
-            return (0, cutoff)  # m._obj_coef * sum(1.0/zval[i] for i in range(DG._k)))
+            print(f"node solution: {m._obj_coef * sum(1.0/zval[i] for i in range(DG._k))}, reported: {cutoff}")
+            return (0, m._obj_coef * sum(1.0/zval[i] for i in range(DG._k)))
+        print('returning (1,0)')
         return (1, 0)
     else:
-        #print(f"computed: {m._obj_coef * sum(1.0/zval[i] for i in range(DG._k))}, reported: {cutoff}")
-        return (0, cutoff)  # m._obj_coef * sum(1.0/zval[i] for i in range(DG._k)))
+        print(f"looks good: {m._obj_coef * sum(1.0/zval[i] for i in range(DG._k))}, reported: {cutoff}")
+        return (0, m._obj_coef * sum(1.0/zval[i] for i in range(DG._k)))
