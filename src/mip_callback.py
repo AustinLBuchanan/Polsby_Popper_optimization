@@ -221,7 +221,7 @@ def xpress_cut_nonconvex(prob, m, sol, lb, ub):
         if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
             m._xpress_bestobj = objval
             name = f'sol_{random.randint(10000,20000)}'
-            print(f"Adding node solution {name} with objective {objval}")
+            #print(f"Adding node solution {name} with objective {objval}")
             prob.addmipsol(sol, name=name)
 
     # For the same reason as above, check if there are stored
@@ -233,7 +233,7 @@ def xpress_cut_nonconvex(prob, m, sol, lb, ub):
             if obj > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
                 m._xpress_bestobj = obj
                 name = f'sol_{random.randint(10000,20000)}'
-                print(f"Adding stored solution {name} with objective {obj}")
+                #print(f"Adding stored solution {name} with objective {obj}")
                 if ind is None:
                     prob.addmipsol(stored, name=name)
                 else:
@@ -334,7 +334,7 @@ def xpress_chksol_cb(prob, m, soltype, cutoff):
     if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
         m._xpress_bestobj = objval
         name = f'sol_{random.randint(10000,20000)}'
-        print(f"Adding solution {name} with objective {objval}")
+        #print(f"Storing solution {name} with objective {objval}")
         m._stored_solutions.append((objval, x, None))
 
     cutoff = objval

@@ -189,7 +189,7 @@ class Model:
             #if self.Params.MIPFocus        is not None: self.xmodel.controls.MIPFocus        = self.Params.MIPFocus
             if self.Params.MIPGap          is not None: self.xmodel.controls.miprelstop      = self.Params.MIPGap
             #if self.Params.NonConvex       is not None: self.xmodel.controls.NonConvex       = self.Params.NonConvex
-            #if self.Params.OutputFlag      is not None: self.xmodel.controls.OutputFlag      = self.Params.OutputFlag
+            if self.Params.OutputFlag      is not None: self.xmodel.controls.outputlog      = self.Params.OutputFlag
             if self.Params.TimeLimit       is not None: self.xmodel.controls.maxtime       = -abs(self.Params.TimeLimit)  # negative to stop if solution not found
 
             self._xpress_bestobj = -1e20

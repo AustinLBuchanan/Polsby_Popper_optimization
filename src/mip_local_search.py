@@ -9,7 +9,7 @@ import mip, mip_objective, mip_contiguity, mip_fixing
 
 def local_search(m, DG, labeling, radius=1):
     
-    print("Applying MIP-based local search to improve the MIP warm start...")
+    print(f"Applying MIP-based local search to improve the MIP warm start (radius: {radius})...")
     
     # gurobi apparently clears the callback at m.optimize(), 
     #   so we need to add it fresh each time (?)
