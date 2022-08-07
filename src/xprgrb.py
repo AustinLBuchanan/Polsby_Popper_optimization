@@ -28,6 +28,8 @@ def getsol(var, prob):
     if solver == 'gurobi':
         return var.x
     else:
+        if prob._xpress_bestsol is not None:
+            return prob._xpress_bestsol[prob.xmodel.getIndex(var)]
         return prob.xmodel.getSolution(var)
 
 
@@ -164,6 +166,9 @@ class Model:
 
 
     def optimize(self, callback=None):
+
+        self._stored_solutions = []
+
         if solver == 'gurobi':
 
             if self.Params.FeasibilityTol  is not None: self.gmodel.Params.FeasibilityTol  = self.Params.FeasibilityTol
@@ -193,6 +198,7 @@ class Model:
             if self.Params.TimeLimit       is not None: self.xmodel.controls.maxtime       = -abs(self.Params.TimeLimit)  # negative to stop if solution not found
 
             self._xpress_bestobj = -1e20
+            self._xpress_bestsol = None
 
             # Ignore callback, the callbacks must have been added
             # through self.xmodel.addcb* calls
@@ -231,7 +237,7 @@ class Model:
             elif name == 'solCount':
                 return self.xmodel.attributes.mipsols
             elif name == 'objVal':
-                return self.xmodel.attributes.mipbestobjval
+                return self._xpress_bestobj # self.xmodel.attributes.mipbestobjval
             elif name == 'objBound':
                 return self.xmodel.attributes.bestbound
             elif name == 'NodeCount':

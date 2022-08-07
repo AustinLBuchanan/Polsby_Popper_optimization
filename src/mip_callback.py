@@ -220,6 +220,7 @@ def xpress_cut_nonconvex(prob, m, sol, lb, ub):
         objval = m._obj_coef * sum(sol[indiz[i]] for i in range(DG._k))
         if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
             m._xpress_bestobj = objval
+            m._xpress_bestsol = sol[:]
             name = f'sol_{random.randint(10000,20000)}'
             #print(f"Adding node solution {name} with objective {objval}")
             prob.addmipsol(sol, name=name)
@@ -333,11 +334,10 @@ def xpress_chksol_cb(prob, m, soltype, cutoff):
     objval = m._obj_coef * sum(2*aval[i]/pval[i]**2 for i in range(DG._k))
     if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
         m._xpress_bestobj = objval
+        m._xpress_bestsol = x
         name = f'sol_{random.randint(10000,20000)}'
         #print(f"Storing solution {name} with objective {objval}")
         m._stored_solutions.append((objval, x, None))
-
-    cutoff = objval
 
     if maxviol > prob.controls.feastol:
         if soltype == 0:
