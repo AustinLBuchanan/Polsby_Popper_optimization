@@ -64,16 +64,16 @@ def add_average_Polsby_Popper_objective(m, DG):
     m._inv_z = m.addVars(DG._k, name='invz', ub=1.0/coef)
 
     # A[j] = area of district j
-    A = m.addVars(DG._k, name='A')
+    m._A = m.addVars(DG._k, name='A')
 
     # P[j] = perimeter of district j
-    P = m.addVars(DG._k, name='P')
+    m._P = m.addVars(DG._k, name='P')
 
     # objective is to maximize average Polsby-Popper score
     m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( m._inv_z[j] for j in range(DG._k) ), GRB.MAXIMIZE )
 
     # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
-    m.addConstrs( P[j] * P[j] <= 2 * A[j] * m._z[j] for j in range(DG._k) )
+    m.addConstrs( m._P[j] * m._P[j] <= 2 * m._A[j] * m._z[j] for j in range(DG._k) )
 
     if solver == 'gurobi':
 
@@ -108,11 +108,11 @@ def add_average_Polsby_Popper_objective(m, DG):
         m.xmodel.addcbchgbranchobject(xpress_branch_cb, m, 1)  # Callback for branching on the z's
 
     # add constraints on areas A[j] 
-    m.addConstrs( A[j] == gp.quicksum( DG.nodes[i]['area'] * m._x[i,j] for i in DG.nodes ) for j in range(DG._k) )
+    m.addConstrs( m._A[j] == gp.quicksum( DG.nodes[i]['area'] * m._x[i,j] for i in DG.nodes ) for j in range(DG._k) )
 
     # add constraints on perimeters P[j]
     for j in range(DG._k):
-        m.addConstr( P[j] == gp.quicksum( DG.edges[u,v]['shared_perim'] * m._y[u,v,j] for u,v in DG.edges )
+        m.addConstr( m._P[j] == gp.quicksum( DG.edges[u,v]['shared_perim'] * m._y[u,v,j] for u,v in DG.edges )
                  + gp.quicksum( DG.nodes[i]['boundary_perim'] * m._x[i,j] for i in DG.nodes if DG.nodes[i]['boundary_node'] ) )
 
     m.update()
