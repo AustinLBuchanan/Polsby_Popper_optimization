@@ -175,6 +175,10 @@ def main():
     m.Params.MIPGap = 0.00
     #m.Params.IntFeasTol = 1.e-9
     #m.Params.FeasibilityTol = 1.e-9
+
+    if solver == 'xpress':
+        print("Adding cutoff of", ls_obj)
+        m.xmodel.controls.mipabscutoff = ls_obj
     m.optimize(m._callback)
     
     # Solution reporting
