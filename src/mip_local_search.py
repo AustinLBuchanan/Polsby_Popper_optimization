@@ -61,7 +61,8 @@ def local_search(m, DG, labeling, radius=1):
 def set_x_ub(m, DG, ub):
     for i in DG.nodes:
         for j in range(DG._k):
-            m._x[i,j].ub = ub
+            gp.setUB(m._x[i,j], m, ub)
+            #m._x[i,j].ub = ub
     m.update()
     return
 
@@ -75,6 +76,7 @@ def set_x_ub_wrt_labeling(m, DG, labeling, radius=1):
         dist = nx.single_source_shortest_path_length(DG, source=i, cutoff=radius)
         for v in dist.keys():
             j = labeling[v]
-            m._x[i,j].ub = 1
+            #m._x[i,j].ub = 1
+            gp.setUB(m._x[i,j], m, 1)
     m.update()
     return
