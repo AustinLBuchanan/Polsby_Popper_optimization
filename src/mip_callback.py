@@ -230,13 +230,11 @@ def xpress_cut_nonconvex(prob, m, sol, lb, ub):
 
     if len(m._stored_solutions) > 0:
         for (obj, stored, ind) in m._stored_solutions:
-            if obj > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
-                m._xpress_bestobj = obj
-                name = f'sol_{random.randint(10000,20000)}'
-                if ind is None:
-                    prob.addmipsol(stored, name=name)
-                else:
-                    prob.addmipsol(stored, ind, name=name)
+            name = f'sol_{random.randint(10000,20000)}'
+            if ind is None:
+                prob.addmipsol(stored, name=name)
+            else:
+                prob.addmipsol(stored, ind, name=name)
 
         m._stored_solutions = []
 
