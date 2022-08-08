@@ -237,7 +237,10 @@ class Model:
             elif name == 'solCount':
                 return self.xmodel.attributes.mipsols
             elif name == 'objVal':
-                return self._xpress_bestobj # self.xmodel.attributes.mipbestobjval
+                if self._xpress_bestobj != -1e20:
+                    return self._xpress_bestobj # self.xmodel.attributes.mipbestobjval
+                else:
+                    return self.xmodel.getObjVal()
             elif name == 'objBound':
                 return self.xmodel.attributes.bestbound
             elif name == 'NodeCount':
