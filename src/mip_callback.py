@@ -337,10 +337,11 @@ def xpress_chksol_cb(prob, m, soltype, cutoff):
         m._stored_solutions.append((objval, x, None))
 
     if maxviol > prob.controls.feastol:
-        if soltype == 0:
-            print(f"node solution: {m._obj_coef * sum(1.0/zval[i] for i in range(DG._k))}, reported: {cutoff}")
-            return (0, m._obj_coef * sum(1.0/zval[i] for i in range(DG._k)))
-        print('returning (1,0)')
+
+        if soltype in [0, 2]: # either node LP or user
+            return (0, objval)
+
         return (1, 0)
+
     else:
         return (0, objval)
