@@ -255,10 +255,14 @@ def hess_heuristic(DG, impose_contiguity=True):
     #    3. get associated vertex ordering ('root', ..., )
     #    4. if x[i,j]=1 then sum( x[v,j] for v in N(i) prior in ordering) >= 1.
     if impose_contiguity and not connected:
+
+        # Moving retrieval of all solutions BEFORE loop; calling
+        # addConstrs makes solution unavailable in Xpress.
+        district = {j: [ i for i in DG.nodes if gp.getsol(x[i,j],m) > 0.5 ] for j in range(DG._k)}
+
         for j in range(DG._k):
-            district = [ i for i in DG.nodes if gp.getsol(x[i,j],m) > 0.5 ]
-            min_dist = min( sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) for i in district)
-            roots = [ i for i in district if min_dist == sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) ]
+            min_dist = min( sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) for i in district[j])
+            roots = [ i for i in district[j] if min_dist == sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) ]
             root = roots[0]
             
             pos = get_bfs_position(DG, root)
