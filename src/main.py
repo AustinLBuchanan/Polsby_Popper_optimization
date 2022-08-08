@@ -91,6 +91,8 @@ def main():
         mip_objective.add_inverse_Polsby_Popper_objective(m, DG)
     elif objective == 'avepp':
         mip_objective.add_average_Polsby_Popper_objective(m, DG)
+    elif objective == 'aveppbe':
+        mip_objective.add_average_Polsby_Popper_objective_binary_expansion(m, DG)
     else:
         print("ERROR: this should not happen. This objective not supported:",objective)
     
@@ -143,7 +145,7 @@ def main():
         
         ls_labeling = hess_labeling
         ls_time = 0
-        max_radius = 3
+        max_radius = 2
         for radius in range(1,max_radius+1):
             (ls_labeling, ls_obj, this_ls_time) = mip_local_search.local_search(m, DG, ls_labeling, radius)
             ls_time += this_ls_time
@@ -171,8 +173,8 @@ def main():
     m.Params.Method = 3 # concurrent
     m.Params.TimeLimit = 600
     m.Params.MIPGap = 0.00
-    m.Params.IntFeasTol = 1.e-9
-    m.Params.FeasibilityTol = 1.e-9
+    #m.Params.IntFeasTol = 1.e-9
+    #m.Params.FeasibilityTol = 1.e-9
     m.optimize(m._callback)
     
     # Solution reporting
@@ -215,7 +217,7 @@ def args_okay(args):
     
     state_args = [ key for key in congressional_districts_2020.keys() ]
     level_args = [ 'county', 'tract' ]
-    objective_args = [ 'cut', 'perim', 'invpp', 'avepp' ]
+    objective_args = [ 'cut', 'perim', 'invpp', 'avepp', 'aveppbe' ]
     contiguity_args = [ 'scf', 'lcut', 'shir' ] 
     
     if state not in state_args:
