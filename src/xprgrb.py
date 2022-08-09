@@ -90,7 +90,6 @@ class Model:
         self.xmodel = None
         self.Params = Params()
         self._callback = None
-        self._stored_solutions = []
 
         if solver == 'gurobi':
             self.gmodel = gurobipy.Model()
@@ -98,6 +97,8 @@ class Model:
             self.xmodel = xp.problem()
         else:
             raise RuntimeError('Solver must be "gurobi" or "xpress"')
+
+        self._stored_solutions = []
 
         self._DG = None
 
