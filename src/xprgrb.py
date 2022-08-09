@@ -168,8 +168,6 @@ class Model:
 
     def optimize(self, callback=None):
 
-        self._stored_solutions = []
-
         if solver == 'gurobi':
 
             if self.Params.FeasibilityTol  is not None: self.gmodel.Params.FeasibilityTol  = self.Params.FeasibilityTol
