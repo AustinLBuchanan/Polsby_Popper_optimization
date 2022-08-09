@@ -34,7 +34,7 @@ def solve_maxB_problem(DG):
     m.setObjective( gp.quicksum( B ), GRB.MAXIMIZE )
     
     m.Params.MIPFocus = 1 # turn on MIPFocus
-    m.Params.timeLimit = 60 # 60-second time limit
+    m.Params.TimeLimit = 60 # 60-second time limit
     m.optimize()
     
     if m.status in { GRB.OPTIMAL, GRB.TIME_LIMIT }:
