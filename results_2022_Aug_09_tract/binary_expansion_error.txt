@@ -1,0 +1,22 @@
+C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {214}
+  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
+Traceback (most recent call last):
+  File "main.py", line 240, in <module>
+    main()
+  File "main.py", line 150, in main
+    (ls_labeling, ls_obj, this_ls_time) = mip_local_search.local_search(m, DG, ls_labeling, radius)
+  File "C:\Users\buchanan\Downloads\ppo_xpress_Aug8\Polsby_Popper_optimization-xpress-version\src\mip_local_search.py", line 29, in local_search
+    print(0,'\t','{0:.8f}'.format(m.objVal),'\t','{0:.2f}'.format(m.runtime))
+  File "C:\Users\buchanan\Downloads\ppo_xpress_Aug8\Polsby_Popper_optimization-xpress-version\src\xprgrb.py", line 212, in __getattr__
+    return getattr(self.gmodel, name)
+  File "src\gurobipy\model.pxi", line 353, in gurobipy.Model.__getattr__
+  File "src\gurobipy\model.pxi", line 1882, in gurobipy.Model.getAttr
+  File "src\gurobipy\attrutil.pxi", line 100, in gurobipy.__getattr
+AttributeError: Unable to retrieve attribute 'objVal'
+sys:1: DtypeWarning: Columns (1) have mixed types.Specify dtype option on import or set low_memory=False.
+C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {2678}
+  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
+C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {1636}
+  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
+C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {1212}
+  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
