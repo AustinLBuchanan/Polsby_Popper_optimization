@@ -5,6 +5,7 @@ import numpy as np
 import mip_contiguity
 import random
 
+
 def xpress_cut_cb(prob, m):
     """
     Wrapper for the secant separator and the lcut separator
@@ -135,7 +136,6 @@ def xpress_branch_cb(prob, m, branch):
         br.addrows(1, ['L'], [rhs], [0, 2], indices, coeffs)
 
     return br
-
 
 
 def xpress_cut_nonconvex(prob, m, sol, lb, ub):
