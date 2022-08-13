@@ -22,6 +22,8 @@ def local_search(m, DG, labeling, radius=1):
     mip.inject_warm_start(m, DG, labeling)
     m.optimize(my_callback)
     grb_time = m.runtime
+
+    new_obj = m.objVal
     
     # LOCAL SEARCH
     max_iterations = 10
@@ -34,7 +36,9 @@ def local_search(m, DG, labeling, radius=1):
         
         set_x_ub_wrt_labeling(m, DG, labeling, radius)
         m.optimize(my_callback)
-        
+        if m.status not in [GRB.TIME_LIMIT, GRB.OPTIMAL]:
+            break
+
         grb_time += m.runtime
         new_obj = m.objVal
         print(iteration,'\t','{0:.8f}'.format(new_obj),'\t','{0:.2f}'.format(m.runtime))
