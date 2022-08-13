@@ -163,14 +163,8 @@ def xpress_cut_nonconvex(prob, m, sol, lb, ub):
     zub  = ub[indz]
 
     invz = sol[indiz]
-    izlb = lb[indiz]
-    izub = ub[indiz]
-
-    pval = sol[indP]
-    aval = sol[indA]
 
     nSec = 0
-    nOA = 0
 
     for i in range(DG._k):
 
@@ -213,11 +207,10 @@ def xpress_cut_nonconvex(prob, m, sol, lb, ub):
 
     if prob.attributes.mipinfeas == 0:
 
-        for i in range(DG._k):
-            sol[indz[i]] = sol[indP[i]]**2 / (2*sol[indA[i]])
-            sol[indiz[i]] = 1/sol[indz[i]]
+        sol[indz] = sol[indP]**2 / (2 * sol[indA])
+        sol[indiz] = 1.0 / sol[indz]
 
-        objval = m._obj_coef * sum(sol[indiz[i]] for i in range(DG._k))
+        objval = m._obj_coef * np.sum(sol[indiz]) # for i in range(DG._k))
         if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
             m._xpress_bestobj = objval
             m._xpress_bestsol = sol[:]
@@ -311,23 +304,25 @@ def xpress_chksol_cb(prob, m, soltype, cutoff):
     except:
         return (1,0)
 
-    indz  = [m.xmodel.getIndex(m._z[i])     for i in range(DG._k)]
-    indiz = [m.xmodel.getIndex(m._inv_z[i]) for i in range(DG._k)]
-    indP  = [m.xmodel.getIndex(m._P[i])     for i in range(DG._k)]
-    indA  = [m.xmodel.getIndex(m._A[i])     for i in range(DG._k)]
+    x = np.array(x)
 
-    zval = [x[ind] for ind in indz]
-    invz = [x[ind] for ind in indiz]
-    pval = [x[ind] for ind in indP]
-    aval = [x[ind] for ind in indA]
+    indz  = np.array([m.xmodel.getIndex(m._z[i])     for i in range(DG._k)])
+    indiz = np.array([m.xmodel.getIndex(m._inv_z[i]) for i in range(DG._k)])
+    indP  = np.array([m.xmodel.getIndex(m._P[i])     for i in range(DG._k)])
+    indA  = np.array([m.xmodel.getIndex(m._A[i])     for i in range(DG._k)])
 
-    maxviol = max([abs(zval[i] * invz[i] - 1) for i in range(DG._k)])
+    zval = x[indz]
+    invz = x[indiz]
 
-    for i in range(DG._k):
-        x[indz[i]] = x[indP[i]]**2 / (2*x[indA[i]])
-        x[indiz[i]] = 1/x[indz[i]]
+    maxviol = np.max(np.abs(zval * invz - 1.0))
 
-    objval = m._obj_coef * sum(2*aval[i]/pval[i]**2 for i in range(DG._k))
+    pval = x[indP]
+    aval = x[indA]
+
+    x[indz] = pval**2 / (2 * aval)
+    x[indiz] = 1.0 / x[indz]
+
+    objval = m._obj_coef * np.sum(2*aval / pval**2)  #(2*aval[i]/pval[i]**2 for i in range(DG._k))
     if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
         m._xpress_bestobj = objval
         m._xpress_bestsol = x
