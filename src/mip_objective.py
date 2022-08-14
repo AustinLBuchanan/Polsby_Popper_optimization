@@ -2,6 +2,7 @@ import xprgrb as gp
 from xprgrb import GRB, solver
 from mip_callback import xpress_branch_cb, xpress_cut_cb, xpress_chksol_cb
 import math
+import mip_contiguity
 
 def add_cut_edges_objective(m, DG):
 
@@ -45,23 +46,122 @@ def add_inverse_Polsby_Popper_objective(m, DG):
     return
 
 
+def find_bounds(DG):
+
+    m = gp.Model()
+
+    # Create variables
+    # x[i] equals one when node i is assigned to district j
+    m._x = m.addVars(DG.nodes, name='x', vtype=GRB.BINARY)
+
+    # r[i] equals one when node i roots district j
+    m._r = m.addVars(DG.nodes, name='r', vtype=GRB.BINARY)
+
+    # y[u,v] equals one when arc (u,v) is cut because u->j but not v->j
+    if solver == 'gurobi':
+        m._y = m.addVars(DG.edges, name='y', vtype=GRB.BINARY)
+    else:
+        m._y = {(u,v): m.addVar(name=f'y_{u}_{v}', vtype=GRB.BINARY) for (u,v) in DG.edges}
+
+    # add constraints saying that if node i roots district j, then i should be in district j
+    m.addConstrs( m._r[i] <= m._x[i] for i in DG.nodes)
+
+    # add constraints saying that each district has population at least L and at most U
+    m.addConstrs( gp.quicksum( DG.nodes[i]['TOTPOP'] * m._x[i] for i in DG.nodes) >= DG._L)
+    m.addConstrs( gp.quicksum( DG.nodes[i]['TOTPOP'] * m._x[i] for i in DG.nodes) <= DG._U)
+
+    # add constraints saying that edge {u,v} is cut if u is assigned to district j but v is not.
+    m.addConstrs( m._x[u] - m._x[v] <= m._y[u,v] for u,v in DG.edges)
+
+    # add strengthening vars/constraints:
+    # edge {u,v} is cut <=> arc (u,v) is cut <=> arc (v,u) is cut
+    #undirected_edges = [ (u,v) for u,v in DG.edges if u<v ]
+    #m._is_cut = m.addVars( undirected_edges, name='iscut', vtype=GRB.BINARY )
+    #m.addConstrs( m._is_cut[min(u,v),max(u,v)] == gp.quicksum( m._y[u,v,j] for j in range(DG._k) ) for u,v in DG.edges )
+
+    # g[i,j] = amount of flow generated at node i of type j
+    g = m.addVars(DG.nodes, name='g')
+
+    # f[j,u,v] = amount of flow sent across arc uv of type j
+    if solver == 'gurobi':
+        f = m.addVars(DG.edges, name='f' )
+    else:
+        f = m.addVars([(u,v) for (u,v) in DG.edges], name='f')
+
+    # compute big-M
+    M = mip_contiguity.most_possible_nodes_in_one_district(DG) - 1
+
+    # flow can only be generated at roots
+    m.addConstrs( g[i] <= (M+1)*m._r[i] for i in DG.nodes)
+
+    # flow balance
+    m.addConstrs( g[i] - m._x[i] == gp.quicksum( f[i,u]-f[u,i] for u in DG.neighbors(i)) for i in DG.nodes)
+
+    # flow type j can enter vertex i only if (i is assigned to district j) and (i is not root of j)
+    m.addConstrs( gp.quicksum( f[u,i] for u in DG.neighbors(i) ) <= M * (m._x[i]-m._r[i]) for i in DG.nodes)
+
+    m.Params.TimeLimit = 60
+    m.Params.OutputFlag = 0
+    # Obtain lower/upper bounds on A ########################
+
+    m.setObjective(gp.quicksum( DG.nodes[i]['area'] * m._x[i] for i in DG.nodes), GRB.MAXIMIZE)
+    m.update()
+    m.optimize()
+    Au = m.objVal
+
+    m.setObjective(gp.quicksum( DG.nodes[i]['area'] * m._x[i] for i in DG.nodes), GRB.MINIMIZE)
+    m.update()
+    m.optimize()
+    Al = m.objVal
+
+    # Obtain lower/upper bounds on P ########################
+
+    m.setObjective (gp.quicksum( DG.edges[u,v]['shared_perim'] * m._y[u,v] for u,v in DG.edges )
+                    + gp.quicksum( DG.nodes[i]['boundary_perim'] * m._x[i] for i in DG.nodes if DG.nodes[i]['boundary_node']), GRB.MAXIMIZE)
+    m.update()
+    m.optimize()
+    Pu = m.objVal
+
+    m.setObjective (gp.quicksum( DG.edges[u,v]['shared_perim'] * m._y[u,v] for u,v in DG.edges )
+                    + gp.quicksum( DG.nodes[i]['boundary_perim'] * m._x[i] for i in DG.nodes if DG.nodes[i]['boundary_node']), GRB.MINIMIZE)
+    m.update()
+    m.optimize()
+    Pl = m.objVal
+
+    return Al, Au, Pl, Pu
+
+
 def add_average_Polsby_Popper_objective(m, DG):
 
     m._DG = DG
-    
+
     # z[j] / coef is inverse Polsby-Popper score for district j
     coef = 2 * math.pi
+
+    print("Finding tight bounds on P&A")
+    # Find lower/upper bounds for A and P by solving four smaller problems
+    (Al, Au, Pl, Pu) = find_bounds(DG)
+
+    zlb = Pl**2 / (2*Au)
+    zub = Pu**2 / (2*Al)
+
+    izlb = 1.0 / zub
+    izub = 1.0 / zlb
+
+    zlb = max(zlb, coef)
+    izub = min(izub, 1.0 / coef)
+
     m._obj_coef = coef / DG._k
-    m._z = m.addVars(DG._k, name='z', lb=coef )
+    m._z = m.addVars(DG._k, name='z', lb=zlb, ub=zub)
 
     # coef * inv_z[j] = coef / z[j] is the Polsby-Popper score for district j
-    m._inv_z = m.addVars(DG._k, name='invz', ub=1.0/coef)
+    m._inv_z = m.addVars(DG._k, name='invz', lb=izlb, ub=izub)
 
     # A[j] = area of district j
-    m._A = m.addVars(DG._k, name='A')
+    m._A = m.addVars(DG._k, name='A', lb=Al, ub=Au)
 
     # P[j] = perimeter of district j
-    m._P = m.addVars(DG._k, name='P')
+    m._P = m.addVars(DG._k, name='P', lb=Pl, ub=Pu)
 
     # objective is to maximize average Polsby-Popper score
     m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( m._inv_z[j] for j in range(DG._k) ), GRB.MAXIMIZE )
