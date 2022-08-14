@@ -66,7 +66,7 @@ def find_bounds(DG):
     # add constraints saying that if node i roots district j, then i should be in district j
     m.addConstrs( m._r[i] <= m._x[i] for i in DG.nodes)
 
-    # add constraints saying that each district has population at least L and at most U
+    # district has population at least L and at most U
     m.addConstrs( gp.quicksum( DG.nodes[i]['TOTPOP'] * m._x[i] for i in DG.nodes) >= DG._L)
     m.addConstrs( gp.quicksum( DG.nodes[i]['TOTPOP'] * m._x[i] for i in DG.nodes) <= DG._U)
 
