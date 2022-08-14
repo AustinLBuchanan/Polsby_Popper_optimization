@@ -96,13 +96,15 @@ def solve_hess_model(DG):
     m.optimize()
     grb_time += m.runtime
     
+    sol = gp.getsol(None, m, None)
+
     # return labeling
-    roots = [ j for j in DG.nodes if gp.getsol(x[j,j], m) > 0.5 ]
+    roots = [ j for j in DG.nodes if gp.getsol(x[j,j], m, sol) > 0.5 ]
     
     # maps a center *vertex* to its district *number*
     root_map = { roots[pos] : pos for pos in range(DG._k) }
     
-    labeling = { i : root_map[j] for i in DG.nodes for j in DG.nodes if gp.getsol(x[i,j],m) > 0.5 }
+    labeling = { i : root_map[j] for i in DG.nodes for j in DG.nodes if gp.getsol(x[i,j], m, sol) > 0.5 }
     return (labeling, grb_time)
 
 #     # need to sort w.r.t. ordering, because of partitioning orbitope
@@ -203,16 +205,17 @@ def hess_heuristic(DG, impose_contiguity=True):
 
         total_cost = m.objVal
         grb_time += m.runtime
-        clusters = [ [ i for i in DG.nodes if gp.getsol(x[i,j],m) > 0.5 ] for j in range(DG._k) ]
+        sol = gp.getsol(None, m, None)
+        clusters = [ [ i for i in DG.nodes if gp.getsol(x[i,j], m, sol) > 0.5 ] for j in range(DG._k) ]
 
         # convergence?
         if total_cost == old_total_cost:
             break
         else:
             # get next means
-            population = [ sum( DG.nodes[i]['TOTPOP'] * gp.getsol(x[i,j],m) for i in DG.nodes ) for j in range(DG._k) ]
-            means_x = [ sum( DG.nodes[i]['TOTPOP'] * DG.nodes[i]['X'] * gp.getsol(x[i,j],m) for i in DG.nodes ) / population[j] for j in range(DG._k) ]
-            means_y = [ sum( DG.nodes[i]['TOTPOP'] * DG.nodes[i]['Y'] * gp.getsol(x[i,j],m) for i in DG.nodes ) / population[j] for j in range(DG._k) ]
+            population = [ sum( DG.nodes[i]['TOTPOP'] * gp.getsol(x[i,j], m, sol) for i in DG.nodes ) for j in range(DG._k) ]
+            means_x = [ sum( DG.nodes[i]['TOTPOP'] * DG.nodes[i]['X'] * gp.getsol(x[i,j], m, sol) for i in DG.nodes ) / population[j] for j in range(DG._k) ]
+            means_y = [ sum( DG.nodes[i]['TOTPOP'] * DG.nodes[i]['Y'] * gp.getsol(x[i,j], m, sol) for i in DG.nodes ) / population[j] for j in range(DG._k) ]
 
     # now solve as an IP
     global solver
@@ -242,8 +245,9 @@ def hess_heuristic(DG, impose_contiguity=True):
     
     # check connectivity. If necessary, add contiguity constraints and re-solve
     connected = True
+    sol = gp.getsol(None, m, None)
     for j in range(DG._k):
-        district = [ i for i in DG.nodes if gp.getsol(x[i,j],m) > 0.5 ]
+        district = [ i for i in DG.nodes if gp.getsol(x[i,j], m, sol) > 0.5 ]
         is_conn = nx.is_strongly_connected(DG.subgraph(district)) 
         #print("In Hess heuristic, is district",j,"connected?",is_conn)
         if not is_conn:
@@ -258,7 +262,7 @@ def hess_heuristic(DG, impose_contiguity=True):
 
         # Moving retrieval of all solutions BEFORE loop; calling
         # addConstrs makes solution unavailable in Xpress.
-        district = {j: [ i for i in DG.nodes if gp.getsol(x[i,j],m) > 0.5 ] for j in range(DG._k)}
+        district = {j: [ i for i in DG.nodes if gp.getsol(x[i,j], m, sol) > 0.5 ] for j in range(DG._k)}
 
         for j in range(DG._k):
             min_dist = min( sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) for i in district[j])
@@ -278,7 +282,8 @@ def hess_heuristic(DG, impose_contiguity=True):
     else:
         print("Success! Hess heuristic found a contiguous IP solution.")
     
-    labeling = { i : j for i in DG.nodes for j in range(DG._k) if gp.getsol(x[i,j],m) > 0.5 }
+    sol = gp.getsol(None, m, None)
+    labeling = { i : j for i in DG.nodes for j in range(DG._k) if gp.getsol(x[i,j], m, sol) > 0.5 }
     return (labeling, grb_time)
   
     

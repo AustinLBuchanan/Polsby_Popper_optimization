@@ -46,7 +46,8 @@ def local_search(m, DG, labeling, radius=1):
         if new_obj == old_obj:
             break
         else:
-            labeling = { i : j for i in DG.nodes for j in range(DG._k) if gp.getsol(m._x[i,j],m) > 0.5 }
+            sol = gp.getsol(None, m, None)
+            labeling = { i : j for i in DG.nodes for j in range(DG._k) if gp.getsol(m._x[i,j], m, sol) > 0.5 }
     
     # reset model
     m._numCallbacks = 0

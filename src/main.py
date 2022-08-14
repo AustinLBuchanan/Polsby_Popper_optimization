@@ -195,7 +195,8 @@ def main():
         result['MIP_obj'] = 'no_solution_found'
     else:
         result['MIP_obj'] = m.objVal
-        labeling = { i : j for i in DG.nodes for j in range(DG._k) if gp.getsol(m._x[i,j],m) > 0.5 }
+        sol = gp.getsol(None, m, None)
+        labeling = { i : j for i in DG.nodes for j in range(DG._k) if gp.getsol(m._x[i,j], m, sol) > 0.5 }
         
         # export districting map to png (image)
         export_filename = export_filepath + state + '_' + level + '_' + objective + '_' + contiguity

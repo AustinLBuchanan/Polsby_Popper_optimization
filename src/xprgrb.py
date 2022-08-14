@@ -24,13 +24,41 @@ def quicksum(arg):
         return xp.Sum(arg)
 
 
-def getsol(var, prob):
+def getsol(var=None, prob=None, sol=None):
+    """Wrapper for obtaining solution value. Since Xpress allows for
+    obtaining more than one variable, and especially because the
+    wrapper actually fills up an entire array of n at every call, only
+    to return just one element of it (grrr), it makes sense to do a
+    pre-call in those loops in the code where a lot of these calls are
+    made, e.g. in ordering.py where tract/TX takes forever.
+
+    For gurobi, no changes.
+    """
+
     if solver == 'gurobi':
+        if var is None:
+            return None
         return var.x
-    else:
+
+    # Use sol[] if provided
+    if sol is not None:
+        assert var is not None
+        return sol[prob.xmodel.getIndex(var)]
+
+    # Otherwise try to get solution from Xpress
+    try:
+        sol = prob.xmodel.getSolution()
+    except:
+        # A solution is not available, try the one we store
         if prob._xpress_bestsol is not None:
-            return prob._xpress_bestsol[prob.xmodel.getIndex(var)]
-        return prob.xmodel.getSolution(var)
+            sol = prob._xpress_bestsol
+        else:
+            raise
+
+    if var is None:
+        return sol
+    else:
+        return sol[prob.xmodel.getIndex(var)]
 
 
 def getLB(var, prob):
