@@ -135,7 +135,8 @@ def main():
     result['hess_time'] = '{0:.2f}'.format(hess_time)
 
     ls_labeling = False
-    
+    ls_obj = None
+
     # MIP-based local search
     if hess_labeling:
         # Improve solution quality with MIP-based local search,
@@ -176,7 +177,7 @@ def main():
     #m.Params.IntFeasTol = 1.e-9
     #m.Params.FeasibilityTol = 1.e-9
 
-    if solver == 'xpress':
+    if solver == 'xpress' and ls_obj is not None:
         print("Adding cutoff of", ls_obj)
         m.xmodel.controls.mipabscutoff = ls_obj
     m.optimize(m._callback)
