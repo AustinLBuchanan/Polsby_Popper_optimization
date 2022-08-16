@@ -279,3 +279,67 @@ def add_average_Polsby_Popper_objective_binary_expansion(m, DG):
     
     m.update()
     return
+
+
+def add_average_Schwartzberg_objective(m, DG):
+
+    decompose = False  # decompose SOC using VDHL
+
+    print("Finding tight bounds on P&A")
+    # Find lower/upper bounds for A and P by solving four smaller problems
+    (Al, Au, Pl, Pu) = find_bounds(DG)
+
+    zlb = Pl**2 / (2*Au)
+    zub = Pu**2 / (2*Al)
+
+    coef = 1.0 / math.sqrt(2 * math.pi)
+
+    #coef = 1.0 / ( 2 * math.pi )
+    z = m.addVars(DG._k, name='z') #, lb=zlb,            ub=zub)
+    s = m.addVars(DG._k, name='ssss') # lb=math.sqrt(zlb), ub=math.sqrt(zub))
+
+    # objective is to minimize average of inverse Polsby-Popper scores
+    m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( s[j] for j in range(DG._k) ), GRB.MINIMIZE )
+
+    # A[j] = area of district j
+    A = m.addVars(DG._k, name='A')
+
+    # P[j] = perimeter of district j
+    P = m.addVars(DG._k, name='P')
+
+    # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
+    m.addConstrs( P[j] * P[j] <= 2 * A[j] * z[j] for j in range(DG._k) )
+
+    # add constraints on areas A[j]
+    m.addConstrs( A[j] == gp.quicksum( DG.nodes[i]['area'] * m._x[i,j] for i in DG.nodes ) for j in range(DG._k) )
+
+    # add constraints on perimeters P[j]
+    for j in range(DG._k):
+        m.addConstr( P[j] == gp.quicksum( DG.edges[u,v]['shared_perim'] * m._y[u,v,j] for u,v in DG.edges )
+                 + gp.quicksum( DG.nodes[i]['boundary_perim'] * m._x[i,j] for i in DG.nodes if DG.nodes[i]['boundary_node'] ) )
+
+    # Binary expansion variables
+    num_digits = 20
+
+    rho = zub * (1 + 2.0**-num_digits)
+
+    # b[t,j] is digit t in binary expansion of z[j]
+    b = m.addVars(num_digits, DG._k, name='b', vtype=GRB.BINARY)
+
+    # Define z as the binary expansion using b[] variables
+    m.addConstrs(z[j] == rho * gp.quicksum(2**-t * b[t,j] for t in range(num_digits)) for j in range(DG._k))
+
+    if decompose:
+
+        # Define the variables used in the Vielma/Dunning/Huchette/Lubin cone decomposition
+        u = m.addVars(num_digits, DG._k, name='cdec')
+
+        # Constraints for the cone decomposition
+        m.addConstrs(2*rho*gp.quicksum(2**-t * u[t,j] for t in range(num_digits)) <= s[j] for j in range(DG._k))
+        m.addConstrs(b[t,j]**2 <= 2*u[t,j]*s[j] for t in range(num_digits) for j in range(DG._k))
+
+    else:
+
+        m.addConstrs(rho*gp.quicksum(2**-t * b[t,j]**2 for t in range(num_digits)) <= s[j]**2 for j in range(DG._k))
+
+    m.update()

@@ -93,6 +93,8 @@ def main():
         mip_objective.add_average_Polsby_Popper_objective(m, DG)
     elif objective == 'aveppbe':
         mip_objective.add_average_Polsby_Popper_objective_binary_expansion(m, DG)
+    elif objective == 'schwartzb':
+        mip_objective.add_average_Schwartzberg_objective(m, DG)
     else:
         print("ERROR: this should not happen. This objective not supported:",objective)
     
@@ -223,7 +225,7 @@ def args_okay(args):
     
     state_args = [ key for key in congressional_districts_2020.keys() ]
     level_args = [ 'county', 'tract' ]
-    objective_args = [ 'cut', 'perim', 'invpp', 'avepp', 'aveppbe' ]
+    objective_args = [ 'cut', 'perim', 'invpp', 'avepp', 'aveppbe', 'schwartzb' ]
     contiguity_args = [ 'scf', 'lcut', 'shir' ] 
     
     if state not in state_args:

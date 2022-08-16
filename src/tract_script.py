@@ -3,7 +3,7 @@ import subprocess
 
 states = [ key for key in congressional_districts_2020.keys() if congressional_districts_2020[key] >= 2 ]
 levels = ['tract']
-objectives = ['cut', 'perim', 'invpp']
+objectives = ['cut', 'perim', 'invpp', 'schwartzb']
 contiguitys = ['lcut'] #,'scf','shir']
 
 for state in reversed(states):
