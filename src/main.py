@@ -136,7 +136,7 @@ def main():
         print("ERROR: warm start heuristic assumes level in {county,tract}")
     result['hess_time'] = '{0:.2f}'.format(hess_time)
 
-    ls_labeling = False
+    ls_labeling = None
     ls_obj = None
 
     # MIP-based local search
@@ -150,6 +150,8 @@ def main():
         ls_time = 0
         max_radius = 2
         for radius in range(1,max_radius+1):
+            if ls_labeling is None:
+                ls_labeling = hess_labeling
             (ls_labeling, ls_obj, this_ls_time) = mip_local_search.local_search(m, DG, ls_labeling, radius)
             ls_time += this_ls_time
 
@@ -167,7 +169,7 @@ def main():
     mip_fixing.do_variable_fixing(m, DG)
     
     # Inject local search warm start
-    if ls_labeling:
+    if ls_labeling is not None:
         # convert ls_labeling into one that meets the partitioning orbitope restrictions
         orbitope_friendly_labeling = mip.get_orbitope_friendly_labeling(DG, ls_labeling)
         mip.inject_warm_start(m, DG, orbitope_friendly_labeling)

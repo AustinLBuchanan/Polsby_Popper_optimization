@@ -9,11 +9,13 @@ def add_cut_edges_objective(m, DG):
     m.setObjective( gp.quicksum( m._is_cut ), GRB.MINIMIZE )
     return
 
+
 def add_perimeter_objective(m, DG):
     # minimize total perimeter = external perimeter + internal perimeter
     ep = sum( DG.nodes[i]['boundary_perim'] for i in DG.nodes if DG.nodes[i]['boundary_node'] ) 
     m.setObjective( ep + gp.quicksum( DG.edges[u,v]['shared_perim'] * m._y[u,v,j] for u,v in DG.edges for j in range(DG._k) ), GRB.MINIMIZE )
     return
+
 
 def add_inverse_Polsby_Popper_objective(m, DG):
                 
@@ -67,8 +69,8 @@ def find_bounds(DG):
     m.addConstrs( m._r[i] <= m._x[i] for i in DG.nodes)
 
     # district has population at least L and at most U
-    m.addConstrs( gp.quicksum( DG.nodes[i]['TOTPOP'] * m._x[i] for i in DG.nodes) >= DG._L)
-    m.addConstrs( gp.quicksum( DG.nodes[i]['TOTPOP'] * m._x[i] for i in DG.nodes) <= DG._U)
+    m.addConstr( gp.quicksum( DG.nodes[i]['TOTPOP'] * m._x[i] for i in DG.nodes) >= DG._L)
+    m.addConstr( gp.quicksum( DG.nodes[i]['TOTPOP'] * m._x[i] for i in DG.nodes) <= DG._U)
 
     # add constraints saying that edge {u,v} is cut if u is assigned to district j but v is not.
     m.addConstrs( m._x[u] - m._x[v] <= m._y[u,v] for u,v in DG.edges)

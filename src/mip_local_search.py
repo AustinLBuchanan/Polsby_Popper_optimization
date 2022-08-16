@@ -23,6 +23,9 @@ def local_search(m, DG, labeling, radius=1):
     m.optimize(my_callback)
     grb_time = m.runtime
 
+    if m.status not in [GRB.TIME_LIMIT, GRB.OPTIMAL]:
+        return (None, -1e20, grb_time)
+
     new_obj = m.objVal
     
     # LOCAL SEARCH
