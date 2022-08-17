@@ -271,11 +271,17 @@ def init_options(args):
 
     try:
         options = {s[0]: s[1] for s in [a.replace(' ', '').split('=') for a in args[4:]]}
-        for key,value in default_options:
-            if key not in options:
-                options[key] = value
     except:
         raise RuntimeError('options after the fourth argument should be in the format "optionname=value"')
+
+    unknown_options = [key for key in options if key not in default_options]
+
+    if unknown_options != []:
+        raise RuntimeError(f"I don't understand these options: {unknown_options}. Please specify one of {list(default_options.keys())}")
+
+    for key,value in default_options.items():
+        if key not in options:
+            options[key] = value
 
     return options
    
