@@ -193,7 +193,7 @@ def main():
     #m.Params.IntFeasTol = 1.e-9
     #m.Params.FeasibilityTol = 1.e-9
 
-    if solver == 'xpress' and ls_obj is not None:
+    if solver == 'xpress' and ls_obj is not None and objective == 'avepp':
         print("Adding cutoff of", ls_obj)
         m.xmodel.controls.mipabscutoff = ls_obj
     m.optimize(m._callback)
