@@ -285,7 +285,7 @@ def add_average_Polsby_Popper_objective_binary_expansion(m, DG):
 
 def add_average_Schwartzberg_objective(m, DG):
 
-    decompose = False  # decompose SOC using VDHL
+    decompose = DG._options['conedecomp'] == 'yes'  # decompose SOC using VDHL
 
     print("Finding tight bounds on P&A")
     # Find lower/upper bounds for A and P by solving four smaller problems

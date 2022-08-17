@@ -1,5 +1,5 @@
 import xprgrb as gp
-from xprgrb import GRB, solver
+from xprgrb import GRB
 import xpress as xp
 import numpy as np
 import mip_contiguity

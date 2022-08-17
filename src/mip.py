@@ -1,5 +1,5 @@
 import xprgrb as gp
-from xprgrb import GRB, solver
+from xprgrb import GRB
 
 def build_base_mip(DG):
     
@@ -12,6 +12,8 @@ def build_base_mip(DG):
 
     # r[i,j] equals one when node i roots district j
     m._r = m.addVars(DG.nodes, DG._k, name='r', vtype=GRB.BINARY)
+
+    from xprgrb import solver
 
     # y[u,v,j] equals one when arc (u,v) is cut because u->j but not v->j
     if solver == 'gurobi':
@@ -91,7 +93,8 @@ def get_orbitope_friendly_labeling(DG, unfriendly_labeling):
 
     
 def inject_warm_start(m, DG, labeling):
-    global solver
+
+    from xprgrb import solver
 
     if solver == 'xpress':
         return inject_warm_start_xpress(m, DG, labeling)

@@ -6,7 +6,7 @@ setSolver()
 import gurobipy
 import xpress as xp
 
-solver = 'gurobi'
+solver = None
 
 
 def setSolver(s):

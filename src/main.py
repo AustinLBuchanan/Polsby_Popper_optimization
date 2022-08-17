@@ -3,7 +3,6 @@ from gerrychain import Graph
 from datetime import date
 import networkx as nx
 import xprgrb as gp
-from xprgrb import solver
 import os, sys, math, csv
 import export, ordering, hess
 import mip, mip_contiguity, mip_objective, mip_fixing, mip_local_search, mip_callback
@@ -18,10 +17,17 @@ def main():
     args = sys.argv[1:]
     if args_okay(args):
         print("Using arguments:",args)
-        (state, level, objective, contiguity) = args
+        (state, level, objective, contiguity) = args[:4]
     else:
         return
-    
+
+    options = init_options(args)
+
+    gp.setSolver(options['solver'])
+    from xprgrb import solver
+
+    args = args[:4]
+
     # get today's date
     today = date.today()
     today_string = today.strftime("%Y_%b_%d") # Year_Month_Day, like 2019_Sept_16
@@ -56,6 +62,9 @@ def main():
     DG = nx.DiGraph(G) # directed version of G
     DG._state = state
     DG._level = level
+
+    DG._options = options  # Keep all extra options within the instance
+
     for node in DG.nodes:
         DG.nodes[node]['TOTPOP'] = G.nodes[node]['P0010001']
     
@@ -216,15 +225,15 @@ def main():
     
 def args_okay(args):
     
-    if len(args) != 4:
-        print("Expecting 4 arguments: <state> <level> <objective> <contiguity>")
+    if len(args) < 4:
+        print("Expecting 4 arguments: <state> <level> <objective> <contiguity> [option1=value1 option2=value2 ...]")
         return False
 
     state = args[0]
     level = args[1]
     objective = args[2]
     contiguity = args[3]
-    
+
     state_args = [ key for key in congressional_districts_2020.keys() ]
     level_args = [ 'county', 'tract' ]
     objective_args = [ 'cut', 'perim', 'invpp', 'avepp', 'aveppbe', 'schwartzb' ]
@@ -244,6 +253,28 @@ def args_okay(args):
         return False
     else:
         return True
+
+
+def init_options(args):
+    """Read extra command-line options into a dictionary for more
+    flexibility (solver, cone decomposition, presolve, etc.)
+    """
+
+    default_options = {
+        'solver':     'gurobi',
+        'presolve':   'no',
+        'conedecomp': 'no'
+    }
+
+    try:
+        options = {s[0]: s[1] for s in [a.replace(' ', '').split('=') for a in args[4:]]}
+        for key,value in default_options:
+            if key not in options:
+                options[key] = value
+    except:
+        raise RuntimeError('options after the fourth argument should be in the format "optionname=value"')
+
+    return options
    
         
 if __name__ == "__main__":
