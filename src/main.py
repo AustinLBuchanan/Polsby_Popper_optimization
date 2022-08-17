@@ -85,6 +85,9 @@ def main():
     # Build base MIP model
     m = mip.build_base_mip(DG)
 
+    if options['presolve'] == 'yes':
+        mip_contiguity.connectivity_preprocess(m, DG)
+
     m._numCallbacks = 0
     m._numLazyCuts = 0
     m._callback = None

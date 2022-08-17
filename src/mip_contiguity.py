@@ -305,3 +305,49 @@ def most_possible_nodes_in_one_district(DG):
         num_nodes += 1
         if cumulative_population > DG._U:
             return num_nodes - 1
+
+
+def connectivity_preprocess(m, DG):
+    """
+    Based on the connectivity of the underlying undirected graph, find
+    articulation node (a.k.a. vertex cuts of cardinality 1) and, for
+    any such node i, check if each connected component C created by
+    removing i has a total population below the district lower
+    bound. If so, C must be in the same district as i and this can be
+    enforced by equalling all x[h,j] with x[i,j] for all j's and for
+    all h in C.
+    """
+
+    UG = DG.to_undirected()
+
+    if nx.is_biconnected(UG):
+        return
+
+    #import matplotlib.pyplot as plt
+    #nx.draw_networkx(UG)
+    #plt.show()
+
+    VC = [i for i in nx.articulation_points(UG)]
+
+    locked_nodes = set()
+
+    for i in VC:
+        fwstar = [j for j in UG[i]]
+        UG.remove_node(i)
+
+        #import matplotlib.pyplot as plt
+        #nx.draw_networkx(UG)
+        #plt.show()
+
+        components = nx.connected_components(UG)
+
+        for c in components:
+            if len(c) >= 1 and sum(DG.nodes[h]['TOTPOP'] for h in c) < DG._L:
+                locked_nodes = locked_nodes.union([h for h in c])
+                m.addConstrs(m._x[i,j] == m._x[h,j] for j in range(DG._k) for h in c)
+                #m.addConstrs(m._y[i,h,j] == 0       for j in range(DG._k) for h in c if (i,h) in DG.edges)
+
+        UG.add_node(i)
+        UG.add_edges_from([(i,j) for j in fwstar])
+
+    print(f"Locked assignment for {len(locked_nodes)} nodes: {locked_nodes}")
