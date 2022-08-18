@@ -1,6 +1,6 @@
 import networkx as nx
 import xprgrb as gp
-from xprgrb import GRB, solver
+from xprgrb import GRB
 import xpress as xp
 from pyproj import Proj
 import random
@@ -218,7 +218,7 @@ def hess_heuristic(DG, impose_contiguity=True):
             means_y = [ sum( DG.nodes[i]['TOTPOP'] * DG.nodes[i]['Y'] * gp.getsol(x[i,j], m, sol) for i in DG.nodes ) / population[j] for j in range(DG._k) ]
 
     # now solve as an IP
-    global solver
+    from xprgrb import solver
 
     if solver == 'gurobi':
         for i in DG.nodes:

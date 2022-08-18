@@ -1,5 +1,5 @@
 import xprgrb as gp
-from xprgrb import GRB, solver
+from xprgrb import GRB
 from mip_callback import xpress_branch_cb, xpress_cut_cb, xpress_chksol_cb
 import math
 import mip_contiguity
@@ -49,6 +49,8 @@ def add_inverse_Polsby_Popper_objective(m, DG):
 
 
 def find_bounds(DG):
+
+    from xprgrb import solver
 
     m = gp.Model()
 
@@ -170,6 +172,8 @@ def add_average_Polsby_Popper_objective(m, DG):
 
     # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
     m.addConstrs( m._P[j] * m._P[j] <= 2 * m._A[j] * m._z[j] for j in range(DG._k) )
+
+    from xprgrb import solver
 
     if solver == 'gurobi':
 
