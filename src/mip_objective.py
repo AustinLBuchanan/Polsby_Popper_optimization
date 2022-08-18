@@ -333,7 +333,7 @@ def add_average_Schwartzberg_objective(m, DG):
     b = m.addVars(num_digits, DG._k, name='b', vtype=GRB.BINARY)
 
     # Define z as the binary expansion using b[] variables
-    m.addConstrs(z[j] == rho * gp.quicksum(2**-t * b[t,j] for t in range(num_digits)) for j in range(DG._k))
+    m.addConstrs(z[j] == rho * gp.quicksum(2**(-(1 + t)) * b[t,j] for t in range(num_digits)) for j in range(DG._k))
 
     if decompose:
 
@@ -346,6 +346,6 @@ def add_average_Schwartzberg_objective(m, DG):
 
     else:
 
-        m.addConstrs(rho*gp.quicksum(2**-t * b[t,j]**2 for t in range(num_digits)) <= s[j]**2 for j in range(DG._k))
+        m.addConstrs(rho * gp.quicksum(2**-(t + 1) * b[t,j]**2 for t in range(num_digits)) <= s[j]**2 for j in range(DG._k))
 
     m.update()
