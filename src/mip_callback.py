@@ -4,6 +4,7 @@ import xpress as xp
 import numpy as np
 import mip_contiguity
 import random
+import math
 
 
 def xpress_cut_cb(prob, m):
@@ -207,7 +208,7 @@ def xpress_cut_nonconvex(prob, m, sol, lb, ub):
 
     if prob.attributes.mipinfeas == 0:
 
-        sol[indz] = sol[indP]**2 / (2 * sol[indA])
+        sol[indz] = sol[indP]**2 / (4 * math.pi * sol[indA])
         sol[indiz] = 1.0 / sol[indz]
 
         objval = m._obj_coef * np.sum(sol[indiz]) # for i in range(DG._k))
@@ -319,10 +320,10 @@ def xpress_chksol_cb(prob, m, soltype, cutoff):
     pval = x[indP]
     aval = x[indA]
 
-    x[indz] = pval**2 / (2 * aval)
+    x[indz] = pval**2 / (4 * math.pi * aval)
     x[indiz] = 1.0 / x[indz]
 
-    objval = m._obj_coef * np.sum(2*aval / pval**2)  #(2*aval[i]/pval[i]**2 for i in range(DG._k))
+    objval = m._obj_coef * np.sum(4 * math.pi * aval / pval**2)  #(4 * math.pi * aval[i]/pval[i]**2 for i in range(DG._k))
     if objval > m._xpress_bestobj + 1e-6 or m._xpress_bestobj == -1e20:
         m._xpress_bestobj = objval
         m._xpress_bestsol = x

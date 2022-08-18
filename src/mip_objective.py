@@ -18,11 +18,10 @@ def add_perimeter_objective(m, DG):
 
 
 def add_inverse_Polsby_Popper_objective(m, DG):
-                
+
     # coef * z[j] is inverse Polsby-Popper score for district j
 
-    coef = 1.0 / ( 2 * math.pi )
-    z = m.addVars(DG._k, name='z')#, lb=2*math.pi)
+    z = m.addVars(DG._k, name='z')#, lb=1)
 
     # objective is to minimize average of inverse Polsby-Popper scores
     m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( z[j] for j in range(DG._k) ), GRB.MINIMIZE )
@@ -34,7 +33,7 @@ def add_inverse_Polsby_Popper_objective(m, DG):
     P = m.addVars(DG._k, name='P')
 
     # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
-    m.addConstrs( P[j] * P[j] <= 2 * A[j] * z[j] for j in range(DG._k) )
+    m.addConstrs( P[j] * P[j] <= 4 * math.pi * A[j] * z[j] for j in range(DG._k) )
 
     # add constraints on areas A[j] 
     m.addConstrs( A[j] == gp.quicksum( DG.nodes[i]['area'] * m._x[i,j] for i in DG.nodes ) for j in range(DG._k) )
@@ -140,22 +139,22 @@ def add_average_Polsby_Popper_objective(m, DG):
     m._DG = DG
 
     # z[j] / coef is inverse Polsby-Popper score for district j
-    coef = 2 * math.pi
+    # coef = 2 * math.pi
 
     print("Finding tight bounds on P&A")
     # Find lower/upper bounds for A and P by solving four smaller problems
     (Al, Au, Pl, Pu) = find_bounds(DG)
 
-    zlb = Pl**2 / (2*Au)
-    zub = Pu**2 / (2*Al)
+    zlb = Pl**2 / (4 * math.pi * Au)
+    zub = Pu**2 / (4 * math.pi * Al)
 
     izlb = 1.0 / zub
     izub = 1.0 / zlb
 
-    zlb = max(zlb, coef)
-    izub = min(izub, 1.0 / coef)
+    zlb  = max(zlb, 1)
+    izub = min(izub, 1)
 
-    m._obj_coef = coef / DG._k
+    m._obj_coef = 1 / DG._k
     m._z = m.addVars(DG._k, name='z', lb=zlb, ub=zub)
 
     # coef * inv_z[j] = coef / z[j] is the Polsby-Popper score for district j
@@ -168,10 +167,10 @@ def add_average_Polsby_Popper_objective(m, DG):
     m._P = m.addVars(DG._k, name='P', lb=Pl, ub=Pu)
 
     # objective is to maximize average Polsby-Popper score
-    m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( m._inv_z[j] for j in range(DG._k) ), GRB.MAXIMIZE )
+    m.setObjective( ( 1.0 / DG._k ) * gp.quicksum( m._inv_z[j] for j in range(DG._k) ), GRB.MAXIMIZE )
 
     # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
-    m.addConstrs( m._P[j] * m._P[j] <= 2 * m._A[j] * m._z[j] for j in range(DG._k) )
+    m.addConstrs( m._P[j] * m._P[j] <= 4 * math.pi * m._A[j] * m._z[j] for j in range(DG._k) )
 
     from xprgrb import solver
 
@@ -295,17 +294,15 @@ def add_average_Schwartzberg_objective(m, DG):
     # Find lower/upper bounds for A and P by solving four smaller problems
     (Al, Au, Pl, Pu) = find_bounds(DG)
 
-    zlb = Pl**2 / (2*Au)
-    zub = Pu**2 / (2*Al)
-
-    coef = 1.0 / math.sqrt(2 * math.pi)
+    zlb = Pl**2 / (4 * math.pi * Au)
+    zub = Pu**2 / (4 * math.pi * Al)
 
     #coef = 1.0 / ( 2 * math.pi )
     z = m.addVars(DG._k, name='z') #, lb=zlb,            ub=zub)
     s = m.addVars(DG._k, name='ssss') # lb=math.sqrt(zlb), ub=math.sqrt(zub))
 
     # objective is to minimize average of inverse Polsby-Popper scores
-    m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( s[j] for j in range(DG._k) ), GRB.MINIMIZE )
+    m.setObjective( ( 1.0 / DG._k ) * gp.quicksum( s[j] for j in range(DG._k) ), GRB.MINIMIZE )
 
     # A[j] = area of district j
     A = m.addVars(DG._k, name='A')
@@ -314,7 +311,7 @@ def add_average_Schwartzberg_objective(m, DG):
     P = m.addVars(DG._k, name='P')
 
     # add SOCP constraints relating inverse Polsby-Popper score z[j] to area and perimeter
-    m.addConstrs( P[j] * P[j] <= 2 * A[j] * z[j] for j in range(DG._k) )
+    m.addConstrs( P[j] * P[j] <= 4 * math.pi * A[j] * z[j] for j in range(DG._k) )
 
     # add constraints on areas A[j]
     m.addConstrs( A[j] == gp.quicksum( DG.nodes[i]['area'] * m._x[i,j] for i in DG.nodes ) for j in range(DG._k) )
