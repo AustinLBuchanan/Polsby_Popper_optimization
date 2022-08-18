@@ -188,7 +188,7 @@ def main():
     
     # Solve
     m.Params.Method = 3 # concurrent
-    m.Params.TimeLimit = 600
+    m.Params.TimeLimit = math.ceil(float(DG._options['timelimit']))
     m.Params.MIPGap = 0.00
     #m.Params.IntFeasTol = 1.e-9
     #m.Params.FeasibilityTol = 1.e-9
@@ -266,7 +266,8 @@ def init_options(args):
     default_options = {
         'solver':     'gurobi',
         'presolve':   'no',
-        'conedecomp': 'no'
+        'conedecomp': 'no',
+        'timelimit':  '600',
     }
 
     try:
