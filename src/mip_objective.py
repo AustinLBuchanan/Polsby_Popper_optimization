@@ -24,7 +24,7 @@ def add_inverse_Polsby_Popper_objective(m, DG):
     z = m.addVars(DG._k, name='z')#, lb=1)
 
     # objective is to minimize average of inverse Polsby-Popper scores
-    m.setObjective( ( 1.0 / DG._k ) * coef * gp.quicksum( z[j] for j in range(DG._k) ), GRB.MINIMIZE )
+    m.setObjective( ( 1.0 / DG._k ) * gp.quicksum( z[j] for j in range(DG._k) ), GRB.MINIMIZE )
     
     # A[j] = area of district j
     A = m.addVars(DG._k, name='A')
@@ -341,7 +341,6 @@ def add_average_Schwartzberg_objective(m, DG):
         m.addConstrs(b[t,j]**2 <= 2*u[t,j]*s[j] for t in range(num_digits) for j in range(DG._k))
 
     else:
-
         m.addConstrs(rho * gp.quicksum(2**-(t + 1) * b[t,j]**2 for t in range(num_digits)) <= s[j]**2 for j in range(DG._k))
 
     m.update()
