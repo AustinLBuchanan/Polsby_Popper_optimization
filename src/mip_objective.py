@@ -121,13 +121,13 @@ def find_bounds(DG):
     # Obtain lower/upper bounds on P ########################
 
     m.setObjective (gp.quicksum( DG.edges[u,v]['shared_perim'] * m._y[u,v] for u,v in DG.edges )
-                    + gp.quicksum( DG.nodes[i]['boundary_perim'] * m._x[i] for i in DG.nodes if DG.nodes[i]['boundary_node']), GRB.MAXIMIZE)
+                  + gp.quicksum( DG.nodes[i]['boundary_perim'] * m._x[i] for i in DG.nodes if DG.nodes[i]['boundary_node']), GRB.MAXIMIZE)
     m.update()
     m.optimize()
     Pu = m.objVal
 
     m.setObjective (gp.quicksum( DG.edges[u,v]['shared_perim'] * m._y[u,v] for u,v in DG.edges )
-                    + gp.quicksum( DG.nodes[i]['boundary_perim'] * m._x[i] for i in DG.nodes if DG.nodes[i]['boundary_node']), GRB.MINIMIZE)
+                  + gp.quicksum( DG.nodes[i]['boundary_perim'] * m._x[i] for i in DG.nodes if DG.nodes[i]['boundary_node']), GRB.MINIMIZE)
     m.update()
     m.optimize()
     Pl = m.objVal
@@ -327,7 +327,7 @@ def add_average_Schwartzberg_objective(m, DG):
     # Binary expansion variables
     num_digits = 20
 
-    rho = zub * (1 + 2.0**-num_digits)
+    rho = zub / (1 - 2.0**-num_digits)
 
     # b[t,j] is digit t in binary expansion of z[j]
     b = m.addVars(num_digits, DG._k, name='b', vtype=GRB.BINARY)

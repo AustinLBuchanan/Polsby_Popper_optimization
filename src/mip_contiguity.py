@@ -252,7 +252,9 @@ def find_fischetti_separator(DG, component, b):
 
 
 def add_shir_constraints(m, DG):
-    
+
+    from xprgrb import solver
+
     # g[i,j] = amount of flow generated at node i of type j
     g = m.addVars(DG.nodes, DG._k, name='g')
     
@@ -350,4 +352,7 @@ def connectivity_preprocess(m, DG):
         UG.add_node(i)
         UG.add_edges_from([(i,j) for j in fwstar])
 
-    print(f"Locked assignment for {len(locked_nodes)} nodes: {locked_nodes}")
+    if len(locked_nodes) > 0:
+        print(f"Locked assignment for {len(locked_nodes)} nodes: {locked_nodes}")
+    else:
+        print("No locked assignment")
