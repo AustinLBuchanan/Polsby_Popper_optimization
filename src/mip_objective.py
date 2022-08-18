@@ -297,9 +297,8 @@ def add_average_Schwartzberg_objective(m, DG):
     zlb = Pl**2 / (4 * math.pi * Au)
     zub = Pu**2 / (4 * math.pi * Al)
 
-    #coef = 1.0 / ( 2 * math.pi )
-    z = m.addVars(DG._k, name='z') #, lb=zlb,            ub=zub)
-    s = m.addVars(DG._k, name='ssss') # lb=math.sqrt(zlb), ub=math.sqrt(zub))
+    z = m.addVars(DG._k, name='z')  #,     lb=zlb,            ub=zub)
+    s = m.addVars(DG._k, name='sroot')  #, lb=math.sqrt(zlb), ub=math.sqrt(zub))
 
     # objective is to minimize average of inverse Polsby-Popper scores
     m.setObjective( ( 1.0 / DG._k ) * gp.quicksum( s[j] for j in range(DG._k) ), GRB.MINIMIZE )
