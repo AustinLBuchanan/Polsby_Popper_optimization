@@ -10,4 +10,4 @@ for state in reversed(states):
     for level in levels:
         for objective in objectives:
             for contiguity in contiguitys:
-                subprocess.call(['python3','main.py',state,level,objective,contiguity])
+                subprocess.call(['python','main.py',state,level,objective,contiguity])

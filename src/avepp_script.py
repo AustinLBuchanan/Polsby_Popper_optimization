@@ -13,9 +13,8 @@ for state in reversed(states):
     for level in levels:
         for objective in objectives:
             for contiguity in contiguitys:
-                subprocess.call(['python3','main.py',state,level,objective,contiguity])
-                
-                
+                subprocess.call(['python','main.py',state,level,objective,contiguity])
+
 # now tract
 
 states = [ key for key in congressional_districts_2020.keys() if congressional_districts_2020[key] >= 2 ]
@@ -27,6 +26,4 @@ for state in reversed(states):
     for level in levels:
         for objective in objectives:
             for contiguity in contiguitys:
-                subprocess.call(['python3','main.py',state,level,objective,contiguity])
-                     
-                
+                subprocess.call(['python','main.py',state,level,objective,contiguity])
