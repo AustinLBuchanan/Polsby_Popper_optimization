@@ -50,7 +50,9 @@ def solve_hess_model(DG):
 
     # add coupling constraints saying that if i is assigned to j, then j is a center.
     m.addConstrs( x[i,j] <= x[j,j] for i in DG.nodes for j in DG.nodes )
-    
+
+    from xprgrb import solver
+
     # add flow variables
     #    f[i,j,v] = flow across arc (i,j) that is sent from souce/root v
     if solver == 'gurobi':
