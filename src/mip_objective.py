@@ -131,7 +131,39 @@ def find_bounds(DG):
     m.optimize()
     Pl = m.objVal
 
-    return Al, Au, Pl, Pu
+    if DG.options['zbounds'] == 'no':
+
+        zl = Pl**2 / (4 * math.pi * Au)
+        zu = Pu**2 / (4 * math.pi * Al)
+
+    else:
+
+        z = m.addVar(name='z')
+        A = m.addVar(name='A')
+        P = m.addVar(name='P')
+
+        m.addConstr(A == gp.quicksum( DG.nodes[i]['area'] * m._x[i] for i in DG.nodes))
+        m.addConstr(P == gp.quicksum( DG.edges[u,v]['shared_perim'] * m._y[u,v] for u,v in DG.edges )
+                    + gp.quicksum( DG.nodes[i]['boundary_perim'] * m._x[i] for i in DG.nodes if DG.nodes[i]['boundary_node']))
+
+        m.addConstr(P**2 <= 4 * math.pi * A * z)
+
+        m.setObjective(z, GRB.MINIMIZE)
+        m.update()
+        m.Params.TimeLimit = 30
+        m.optimize()
+        zl = m.objBound
+
+        m.addConstr(P**2 == 4 * math.pi * A * z)
+
+        m.setObjective(z, GRB.MAXIMIZE)
+        m.update()
+        m.Params.NonConvex = 2
+        m.Params.TimeLimit = 30
+        m.optimize()
+        zu = m.objBound
+
+    return Al, Au, Pl, Pu, zl, zu
 
 
 def add_average_Polsby_Popper_objective(m, DG):
@@ -143,16 +175,10 @@ def add_average_Polsby_Popper_objective(m, DG):
 
     print("Finding tight bounds on P&A")
     # Find lower/upper bounds for A and P by solving four smaller problems
-    (Al, Au, Pl, Pu) = find_bounds(DG)
-
-    zlb = Pl**2 / (4 * math.pi * Au)
-    zub = Pu**2 / (4 * math.pi * Al)
+    (Al, Au, Pl, Pu, zlb, zub) = find_bounds(DG)
 
     izlb = 1.0 / zub
     izub = 1.0 / zlb
-
-    zlb  = max(zlb, 1)
-    izub = min(izub, 1)
 
     m._obj_coef = 1 / DG._k
     m._z = m.addVars(DG._k, name='z', lb=zlb, ub=zub)
@@ -292,10 +318,7 @@ def add_average_Schwartzberg_objective(m, DG):
 
     print("Finding tight bounds on P&A")
     # Find lower/upper bounds for A and P by solving four smaller problems
-    (Al, Au, Pl, Pu) = find_bounds(DG)
-
-    zlb = Pl**2 / (4 * math.pi * Au)
-    zub = Pu**2 / (4 * math.pi * Al)
+    (Al, Au, Pl, Pu, zlb, zub) = find_bounds(DG)
 
     z = m.addVars(DG._k, name='z')  #,     lb=zlb,            ub=zub)
     s = m.addVars(DG._k, name='sroot')  #, lb=math.sqrt(zlb), ub=math.sqrt(zub))

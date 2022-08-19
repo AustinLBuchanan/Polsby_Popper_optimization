@@ -268,6 +268,7 @@ def init_options(args):
         'presolve':   'no',
         'conedecomp': 'no',
         'timelimit':  '600',
+        'zbounds':    'no',
     }
 
     try:
