@@ -131,7 +131,7 @@ def find_bounds(DG):
     m.optimize()
     Pl = m.objVal
 
-    if DG.options['zbounds'] == 'no':
+    if DG._options['zbounds'] == 'no':
 
         zl = Pl**2 / (4 * math.pi * Au)
         zu = Pu**2 / (4 * math.pi * Al)
