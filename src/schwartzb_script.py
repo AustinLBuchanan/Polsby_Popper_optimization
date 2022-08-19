@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from number_of_districts import congressional_districts_2020
 
 # Alabama, Arkansas, Idaho, Iowa, Kansas, Maine, Mississippi, Montana, Nebraska, New Mexico, and West Virginia.
 states = ['AL','AR','ID','IA','KS','ME','MS','MT','NE','NM','WV']
