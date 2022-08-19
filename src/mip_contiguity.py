@@ -307,6 +307,7 @@ def most_possible_nodes_in_one_district(DG):
         num_nodes += 1
         if cumulative_population > DG._U:
             return num_nodes - 1
+    return len(population)
 
 
 def connectivity_preprocess(m, DG):
