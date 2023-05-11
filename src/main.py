@@ -190,8 +190,8 @@ def main():
     m.Params.Method = 3 # concurrent
     m.Params.TimeLimit = math.ceil(float(DG._options['timelimit']))
     m.Params.MIPGap = 0.00
-    #m.Params.IntFeasTol = 1.e-9
-    #m.Params.FeasibilityTol = 1.e-9
+    m.Params.IntFeasTol = 1.e-7
+    m.Params.FeasibilityTol = 1.e-7
 
     if solver == 'xpress' and ls_obj is not None and objective == 'avepp':
         print("Adding cutoff of", ls_obj)
@@ -267,7 +267,7 @@ def init_options(args):
         'solver':     'gurobi',
         'presolve':   'no',
         'conedecomp': 'no',
-        'timelimit':  '600',
+        'timelimit':  '3600',
         'zbounds':    'no',
     }
 

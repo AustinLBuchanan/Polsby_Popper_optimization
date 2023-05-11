@@ -74,8 +74,8 @@ def solve_hess_model(DG):
 
     # solve
     m.Params.TimeLimit = 60
-    m.Params.IntFeasTol = 1.e-9
-    m.Params.FeasibilityTol = 1.e-9
+    m.Params.IntFeasTol = 1.e-7
+    m.Params.FeasibilityTol = 1.e-7
     
     # apply diagonal fixing first, to test feasibility
     for i in DG.nodes:
@@ -233,8 +233,8 @@ def hess_heuristic(DG, impose_contiguity=True):
     m.setObjective( gp.quicksum( DG.nodes[i]['TOTPOP'] * sq_eucl_dist(DG.nodes[i]['X'],DG.nodes[i]['Y'],means_x[j],means_y[j]) * x[i,j] for i in DG.nodes for j in range(DG._k)), GRB.MINIMIZE )
     m.Params.MIPGap = 0.01 # 1% gap permitted
     m.Params.TimeLimit = 60 # 60 second limit
-    m.Params.IntFeasTol = 1.e-9
-    m.Params.FeasibilityTol = 1.e-9
+    m.Params.IntFeasTol = 1.e-7
+    m.Params.FeasibilityTol = 1.e-7
     #m.Params.OutputFlag = 1
     m.optimize()
     grb_time += m.runtime
