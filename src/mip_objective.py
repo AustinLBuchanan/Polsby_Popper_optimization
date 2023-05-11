@@ -315,6 +315,7 @@ def add_average_Polsby_Popper_objective_binary_expansion(m, DG):
 def add_average_Schwartzberg_objective(m, DG):
 
     decompose = DG._options['conedecomp'] == 'yes'  # decompose SOC using VDHL
+    assert not decompose # deprecated
 
     print("Finding tight bounds on P&A")
     # Find lower/upper bounds for A and P by solving four smaller problems
@@ -345,14 +346,14 @@ def add_average_Schwartzberg_objective(m, DG):
 
     # Binary expansion variables
     num_digits = 20
-
-    rho = zub / (1 - 2.0**-num_digits)
+    big_M = 17
 
     # b[t,j] is digit t in binary expansion of z[j]
     b = m.addVars(num_digits, DG._k, name='b', vtype=GRB.BINARY)
 
     # Define z as the binary expansion using b[] variables
-    m.addConstrs(z[j] == rho * gp.quicksum(2**(-(1 + t)) * b[t,j] for t in range(num_digits)) for j in range(DG._k))
+    #m.addConstrs(z[j] == rho * gp.quicksum(2**(-(1 + t)) * b[t,j] for t in range(num_digits)) for j in range(DG._k))
+    m.addConstrs( z[j] <= 1 + (big_M-1) * gp.quicksum(2**(-(1 + t)) * b[t,j] for t in range(num_digits)) for j in range(DG._k) )
 
     if decompose:
 
@@ -360,10 +361,11 @@ def add_average_Schwartzberg_objective(m, DG):
         u = m.addVars(num_digits, DG._k, name='cdec')
 
         # Constraints for the cone decomposition
+        rho = zub / (1 - 2.0**-num_digits)
         m.addConstrs(2*rho*gp.quicksum(2**-t * u[t,j] for t in range(num_digits)) <= s[j] for j in range(DG._k))
         m.addConstrs(b[t,j]**2 <= 2*u[t,j]*s[j] for t in range(num_digits) for j in range(DG._k))
 
-    else:
-        m.addConstrs(rho * gp.quicksum(2**-(t + 1) * b[t,j]**2 for t in range(num_digits)) <= s[j]**2 for j in range(DG._k))
+    else:       
+        m.addConstrs( 1 + (big_M-1) * gp.quicksum(2**(-(1 + t)) * b[t,j] * b[t,j] for t in range(num_digits)) <= s[j]**2 for j in range(DG._k))
 
     m.update()
