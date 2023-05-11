@@ -2,12 +2,13 @@ import networkx as nx
 import xprgrb as gp
 from xprgrb import GRB
 import mip, mip_objective, mip_contiguity, mip_fixing
+from tract_approximation import distance_to_vertex_set
 
 # In the spirit of "ILP-based local search for graph partitioning"
 #    by A Henzinger, A Noe, C Schulz - Journal of Experimental Algorithmics, 2020
 #    https://scholar.google.com/scholar?cluster=9173497710013156715&hl=en&as_sdt=0,37
 
-def local_search(m, DG, labeling, radius=1):
+def local_search(m, DG, labeling, radius=1, max_iterations=10, preserve_splits=False):
     
     print(f"Applying MIP-based local search to improve the MIP warm start (radius: {radius})...")
     
@@ -29,7 +30,6 @@ def local_search(m, DG, labeling, radius=1):
     new_obj = m.objVal
     
     # LOCAL SEARCH
-    max_iterations = 10
     print("iter \t\t obj \t\t time")
     print(0,'\t','{0:.8f}'.format(m.objVal),'\t','{0:.2f}'.format(m.runtime))
     
@@ -37,7 +37,7 @@ def local_search(m, DG, labeling, radius=1):
         
         old_obj = m.objVal
         
-        set_x_ub_wrt_labeling(m, DG, labeling, radius)
+        set_x_ub_wrt_labeling(m, DG, labeling, radius, preserve_splits)
         m.optimize(my_callback)
         if m.status not in [GRB.TIME_LIMIT, GRB.OPTIMAL]:
             break
@@ -76,15 +76,35 @@ def set_x_ub(m, DG, ub):
 
 
 # set x[i,j].ub=1 if and only if there is a
-#  vertex v with dist(i,j)<=radius and labeling[v]=j
+#  vertex v with dist(i,j)<=radius and labeling[v]=j 
 #
-def set_x_ub_wrt_labeling(m, DG, labeling, radius=1):
+def set_x_ub_wrt_labeling(m, DG, labeling, radius=1, preserve_splits=False):
     set_x_ub(m, DG, ub=0)
-    for i in DG.nodes:
-        dist = nx.single_source_shortest_path_length(DG, source=i, cutoff=radius)
-        for v in dist.keys():
-            j = labeling[v]
-            #m._x[i,j].ub = 1
+    
+    for j in range(DG._k):
+        district = [ i for i in DG.nodes if labeling[i] == j ]
+        dist = distance_to_vertex_set(DG, district, cutoff=radius)
+        for i in dist.keys():
             gp.setUB(m._x[i,j], m, 1)
+            #m._x[i,j].ub = 1
+            
+    if preserve_splits:
+        counties = { DG.nodes[i]['GEOID20'][0:5] for i in DG.nodes }
+        support = { c : list() for c in counties }
+        
+        for i in labeling.keys():
+            j = labeling[i]
+            c = DG.nodes[i]['GEOID20'][0:5]
+            if j not in support[c]:
+                support[c].append(j)
+        
+        nonsupport = { c : set(range(DG._k)) - set(support[c]) for c in counties }
+        
+        for i in DG.nodes:
+            c = DG.nodes[i]['GEOID20'][0:5]
+            for j in nonsupport[c]:
+                gp.setUB(m._x[i,j], m, 0)
+                
+            
     m.update()
     return
