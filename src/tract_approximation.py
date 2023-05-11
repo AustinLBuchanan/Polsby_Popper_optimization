@@ -73,6 +73,23 @@ def get_tract_approximation(G, GB, L, U, k, block_assignment):
     m.addConstrs( gp.quicksum( G.nodes[i]['TOTPOP'] * x[i,j] for i in G.nodes ) >= L for j in range(k) )
     m.addConstrs( gp.quicksum( G.nodes[i]['TOTPOP'] * x[i,j] for i in G.nodes ) <= U for j in range(k) )
 
+    
+    # BVAP >= 50% FOR DISTRICTS 1 AND 6
+    codes = ['P0030004'] # Black or African American alone 
+    codes += ['P0030011','P0030016','P0030017','P0030018','P0030019'] # Black or African American (among 2 races)
+    codes += ['P0030027','P0030028','P0030029','P0030030','P0030037','P0030038','P0030039','P0030040','P0030041','P0030042'] # 3
+    codes += ['P0030048','P0030049','P0030050','P0030051','P0030052','P0030053','P0030058','P0030059','P0030060','P0030061'] # 4
+    codes += ['P0030064','P0030065', 'P0030066','P0030067','P0030069'] # 5
+    codes += ['P0030071'] # 6
+
+    for i in G.nodes:
+        G.nodes[i]['VAP'] = G.nodes[i]['P0030001'] 
+        G.nodes[i]['MVAP'] = sum( G.nodes[i][code] for code in codes )
+
+    # Impose mvap >= 0.5 * vap for districts 2 and 7 (i.e., 1 and 6 in python)
+    m.addConstr( gp.quicksum( G.nodes[i]['MVAP'] * x[i,1] for i in G.nodes ) >= 0.50 * gp.quicksum( G.nodes[i]['VAP'] * x[i,1] for i in G.nodes ) )
+    m.addConstr( gp.quicksum( G.nodes[i]['MVAP'] * x[i,6] for i in G.nodes ) >= 0.50 * gp.quicksum( G.nodes[i]['VAP'] * x[i,6] for i in G.nodes ) )
+
     # what is the "cost" to transport tract i to the block-level plan's district j?
     cost = { (i,j) : 0 for i in G.nodes for j in range(k) }        
 
@@ -138,13 +155,17 @@ def get_tract_approximation(G, GB, L, U, k, block_assignment):
 # ...
 # dist[i]=None if no path from i to S
 #
-def distance_to_vertex_set(G, S):
-    dist = { i : None for i in G.nodes }
+def distance_to_vertex_set(G, S, cutoff=None):
+    if cutoff==None:
+        cutoff = G.number_of_nodes()
+    
+    dist = dict()
     touched = { i : False for i in G.nodes }
     child = S
     for s in S:
         touched[s] = True
-    for h in range(G.number_of_nodes()):
+    
+    for h in range(1+cutoff):
         parent = child
         child = list()
         for p in parent:
