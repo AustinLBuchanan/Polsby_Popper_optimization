@@ -304,6 +304,8 @@ def add_average_Polsby_Popper_objective_binary_expansion(m, DG):
     m.addConstrs( m._z[j] + big_M * ( b[i,j] - 1 ) <= w[i,j] for i in range(num_digits) for j in range(DG._k) )
     
     ## set priority on largest of binary expansion
+    for j in range(DG._k):
+        b[0,j].BranchPriority = 1
     #for i in range(num_digits):
     #    for j in range(DG._k):
     #        b[i,j].BranchPriority = num_digits - i
@@ -367,5 +369,8 @@ def add_average_Schwartzberg_objective(m, DG):
 
     else:       
         m.addConstrs( 1 + (big_M-1) * gp.quicksum(2**(-(1 + t)) * b[t,j] * b[t,j] for t in range(num_digits)) <= s[j]**2 for j in range(DG._k))
+        
+    for j in range(DG._k):
+        b[0,j].BranchPriority = 1
         
     m.update()
