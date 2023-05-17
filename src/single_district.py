@@ -1,6 +1,3 @@
-#import xprgrb as gp
-#from xprgrb import GRB
-
 import gurobipy as gp
 from gurobipy import GRB
 import geopandas as gpd
@@ -106,9 +103,6 @@ def build_single_district_mip(DG, minority=None, contiguity=None, root=None, for
         
         for i in DG.nodes:
         
-            # total population
-            #DG.nodes[i]['TOTPOP'] = DG.nodes[i]['P0010001']
-    
             # voting age population (VAP)
             DG.nodes[i]['VAP'] = DG.nodes[i]['P0030001']
         
@@ -249,6 +243,7 @@ def cut_callback(m, where):
             m._numLazyCuts += 1
                 
     return
+
 
 def draw_single_district( filepath, filename, G, district, zoom=False ):
     

@@ -2,14 +2,13 @@ from number_of_districts import congressional_districts_2020
 from gerrychain import Graph
 from datetime import date
 import networkx as nx
-import xprgrb as gp
+import gurobipy as gp
 import os, sys, math, csv
 import export, ordering, hess
-import mip, mip_contiguity, mip_objective, mip_fixing, mip_local_search, mip_callback
+import mip, mip_contiguity, mip_objective, mip_fixing, mip_local_search
 import pathlib
 
-datapath = pathlib.Path("../districting-data-2020/")
-
+datapath = pathlib.Path("C:/districting-data-2020/")
 
 def main():
     
@@ -22,10 +21,6 @@ def main():
         return
 
     options = init_options(args)
-
-    gp.setSolver(options['solver'])
-    from xprgrb import solver
-
     args = args[:4]
 
     # get today's date
@@ -84,10 +79,6 @@ def main():
     
     # Build base MIP model
     m = mip.build_base_mip(DG)
-
-    if options['presolve'] == 'yes':
-        mip_contiguity.connectivity_preprocess(m, DG)
-
     m._numCallbacks = 0
     m._numLazyCuts = 0
     m._callback = None
@@ -103,8 +94,6 @@ def main():
         mip_objective.add_inverse_Polsby_Popper_objective(m, DG)
     elif objective == 'avepp':
         mip_objective.add_average_Polsby_Popper_objective(m, DG)
-    elif objective == 'aveppbe':
-        mip_objective.add_average_Polsby_Popper_objective_binary_expansion(m, DG)
     elif objective == 'schwartzb':
         mip_objective.add_average_Schwartzberg_objective(m, DG)
     else:
@@ -116,21 +105,11 @@ def main():
     (result['B_size'], result['B_time']) = ( len(B), '{0:.2f}'.format(B_time) )
     DG._ordering = ordering.find_ordering(DG, B)
 
-    if (contiguity == 'lcut' or objective == 'avepp') and \
-       solver == 'xpress':
-        m.xmodel.addcboptnode(mip_callback.xpress_cut_cb, m, 1)
-
     # Add contiguity constraints
     if contiguity == 'lcut':
         m._DG = DG
         m.Params.LazyConstraints = 1
-
-        if solver == 'gurobi':
-            m._callback = mip_contiguity.lcut_callback
-        else:
-            assert m.xmodel is not None
-            m.xmodel.addcbpreintsol(mip_contiguity.lcut_callback_xpress_preintsol, m, 1)
-
+        m._callback = mip_contiguity.lcut_callback
     elif contiguity == 'scf':
         mip_contiguity.add_scf_constraints(m, DG)
     elif contiguity == 'shir':
@@ -192,10 +171,6 @@ def main():
     m.Params.MIPGap = 0.00
     m.Params.IntFeasTol = 1.e-7
     m.Params.FeasibilityTol = 1.e-7
-
-    if solver == 'xpress' and ls_obj is not None and objective == 'avepp':
-        print("Adding cutoff of", ls_obj)
-        m.xmodel.controls.mipabscutoff = ls_obj
     m.optimize(m._callback)
     
     # Solution reporting
@@ -211,8 +186,7 @@ def main():
         result['MIP_obj'] = 'no_solution_found'
     else:
         result['MIP_obj'] = m.objVal
-        sol = gp.getsol(None, m, None)
-        labeling = { i : j for i in DG.nodes for j in range(DG._k) if gp.getsol(m._x[i,j], m, sol) > 0.5 }
+        labeling = { i : j for i in DG.nodes for j in range(DG._k) if m._x[i,j].x > 0.5 }
         
         # export districting map to png (image)
         export_filename = export_filepath + state + '_' + level + '_' + objective + '_' + contiguity
@@ -264,11 +238,7 @@ def init_options(args):
     """
 
     default_options = {
-        'solver':     'gurobi',
-        'presolve':   'no',
-        'conedecomp': 'no',
         'timelimit':  '3600',
-        'zbounds':    'no',
     }
 
     try:

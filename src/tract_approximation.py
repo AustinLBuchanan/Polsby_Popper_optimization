@@ -75,6 +75,7 @@ def get_tract_approximation(G, GB, L, U, k, block_assignment):
 
     
     # BVAP >= 50% FOR DISTRICTS 1 AND 6
+    print("Adding BVAP>=50% constraints.")
     codes = ['P0030004'] # Black or African American alone 
     codes += ['P0030011','P0030016','P0030017','P0030018','P0030019'] # Black or African American (among 2 races)
     codes += ['P0030027','P0030028','P0030029','P0030030','P0030037','P0030038','P0030039','P0030040','P0030041','P0030042'] # 3

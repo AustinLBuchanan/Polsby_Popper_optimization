@@ -1,5 +1,5 @@
-import xprgrb as gp
-from xprgrb import GRB
+import gurobipy as gp
+from gurobipy import GRB
 
 def sort_by_second(val):
     return val[1]
@@ -38,8 +38,7 @@ def solve_maxB_problem(DG):
     m.optimize()
     
     if m.status in { GRB.OPTIMAL, GRB.TIME_LIMIT }:
-        sol = gp.getsol(None, m, None)
-        B_sol = [ i for i in DG.nodes if gp.getsol(B[i], m, sol) > 0.5 ]
+        B_sol = [ i for i in DG.nodes if B[i].x > 0.5 ]
     else:
         B_sol = list()
     #print("Size of B =",len(B_sol))

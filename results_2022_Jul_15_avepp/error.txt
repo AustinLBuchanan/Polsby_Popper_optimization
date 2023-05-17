@@ -1,9 +1,0 @@
-C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {214}
-  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
-sys:1: DtypeWarning: Columns (1) have mixed types.Specify dtype option on import or set low_memory=False.
-C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {2678}
-  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
-C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {1636}
-  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)
-C:\Users\buchanan\Anaconda3\lib\site-packages\gerrychain\graph\graph.py:239: UserWarning: Found islands (degree-0 nodes). Indices of islands: {1212}
-  "Found islands (degree-0 nodes). Indices of islands: {}".format(islands)

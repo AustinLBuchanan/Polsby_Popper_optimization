@@ -1,6 +1,6 @@
 import networkx as nx
-import xprgrb as gp
-from xprgrb import GRB
+import gurobipy as gp
+from gurobipy import GRB
 import mip, mip_objective, mip_contiguity, mip_fixing
 from tract_approximation import distance_to_vertex_set
 
@@ -13,7 +13,7 @@ def local_search(m, DG, labeling, radius=1, max_iterations=10, preserve_splits=F
     print(f"Applying MIP-based local search to improve the MIP warm start (radius: {radius})...")
     
     # gurobi apparently clears the callback at m.optimize(), 
-    #   so we need to add it fresh each time (?)
+    #   so we need to add it fresh each time 
     my_callback = m._callback 
     
     # get objective value of initial labeling
@@ -49,8 +49,7 @@ def local_search(m, DG, labeling, radius=1, max_iterations=10, preserve_splits=F
         if new_obj == old_obj:
             break
         else:
-            sol = gp.getsol(None, m, None)
-            labeling = { i : j for i in DG.nodes for j in range(DG._k) if gp.getsol(m._x[i,j], m, sol) > 0.5 }
+            labeling = { i : j for i in DG.nodes for j in range(DG._k) if m._x[i,j].x > 0.5 }
     
     # reset model
     m._numCallbacks = 0
@@ -69,8 +68,7 @@ def local_search(m, DG, labeling, radius=1, max_iterations=10, preserve_splits=F
 def set_x_ub(m, DG, ub):
     for i in DG.nodes:
         for j in range(DG._k):
-            gp.setUB(m._x[i,j], m, ub)
-            #m._x[i,j].ub = ub
+            m._x[i,j].ub = ub
     m.update()
     return
 
@@ -85,8 +83,7 @@ def set_x_ub_wrt_labeling(m, DG, labeling, radius=1, preserve_splits=False):
         district = [ i for i in DG.nodes if labeling[i] == j ]
         dist = distance_to_vertex_set(DG, district, cutoff=radius)
         for i in dist.keys():
-            gp.setUB(m._x[i,j], m, 1)
-            #m._x[i,j].ub = 1
+            m._x[i,j].ub = 1
             
     if preserve_splits:
         counties = { DG.nodes[i]['GEOID20'][0:5] for i in DG.nodes }
@@ -103,8 +100,7 @@ def set_x_ub_wrt_labeling(m, DG, labeling, radius=1, preserve_splits=False):
         for i in DG.nodes:
             c = DG.nodes[i]['GEOID20'][0:5]
             for j in nonsupport[c]:
-                gp.setUB(m._x[i,j], m, 0)
-                
+                m._x[i,j].UB = 0
             
     m.update()
     return

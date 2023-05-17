@@ -1,5 +1,5 @@
-import xprgrb as gp
-from xprgrb import GRB
+import gurobipy as gp
+from gurobipy import GRB
 
 def build_base_mip(DG):
     
@@ -13,13 +13,8 @@ def build_base_mip(DG):
     # r[i,j] equals one when node i roots district j
     m._r = m.addVars(DG.nodes, DG._k, name='r', vtype=GRB.BINARY)
 
-    from xprgrb import solver
-
     # y[u,v,j] equals one when arc (u,v) is cut because u->j but not v->j
-    if solver == 'gurobi':
-        m._y = m.addVars(DG.edges, DG._k, name='y', vtype=GRB.BINARY)
-    else:
-        m._y = {(u,v,j): m.addVar(name=f'y_{u}_{v}_{j}', vtype=GRB.BINARY) for (u,v) in DG.edges for j in range(DG._k)}
+    m._y = m.addVars(DG.edges, DG._k, name='y', vtype=GRB.BINARY)
 
     # add constraints saying that each node i is assigned to one district
     m.addConstrs( gp.quicksum( m._x[i,j] for j in range(DG._k)) == 1 for i in DG.nodes )
@@ -61,7 +56,7 @@ def add_partitioning_orbitope_constraints(m, DG):
     m.addConstrs(u[DG._ordering[i],DG._k-1]+m._r[DG._ordering[i],DG._k-1] == u[DG._ordering[i+1],DG._k-1] for i in range(0,DG.number_of_nodes()-1))
     m.addConstrs(u[DG._ordering[DG.number_of_nodes()-1],j]+m._r[DG._ordering[DG.number_of_nodes()-1],j] == 0 for j in range(DG._k-1))
 
-    gp.setLB(m._r[DG._ordering[0],0], m, 1)
+    m._r[DG._ordering[0],0].LB = 1
     m.addConstr( u[DG._ordering[DG.number_of_nodes()-1],DG._k-1] + m._r[DG._ordering[DG.number_of_nodes()-1],DG._k-1]==1 )  
     m.update()
     return
@@ -94,13 +89,6 @@ def get_orbitope_friendly_labeling(DG, unfriendly_labeling):
     
 def inject_warm_start(m, DG, labeling):
 
-    from xprgrb import solver
-
-    if solver == 'xpress':
-        return inject_warm_start_xpress(m, DG, labeling)
-
-    #print("In inject, labeling =",labeling)
-    
     # initialize all variables to 0
     for i in DG._ordering:
         for j in range(DG._k):
@@ -129,47 +117,3 @@ def inject_warm_start(m, DG, labeling):
     
     m.update()
     return
-
-
-def inject_warm_start_xpress(m, DG, labeling):
-
-    sol = {}
-
-    # initialize all variables to 0
-    for i in DG._ordering:
-        for j in range(DG._k):
-            sol['x', i, j] = 0
-            sol['r', i, j] = 0
-
-    for u,v in DG.edges:
-        for j in range(DG._k):
-            sol['y', u, v, j] = 0
-
-    # now inject the nonzeros of our solution
-    root_found = { j : False for j in range(DG._k) }
-    for i in DG._ordering:
-
-        j = labeling[i]
-        sol['x', i, j] = 1
-
-        if not root_found[j]:
-            root_found[j] = True
-            sol['r', i, j] = 1
-
-    for u,v in DG.edges:
-        j = labeling[u]
-        if labeling[v] != j:
-            sol['y', u, v, j] = 1
-
-    solval = [sol['x', i, j]    for i in DG._ordering for j in range(DG._k)] + \
-             [sol['r', i, j]    for i in DG._ordering for j in range(DG._k)] + \
-             [sol['y', u, v, j] for u, v in DG.edges  for j in range(DG._k)]
-
-    solind = [m._x[i,j]   for i in DG._ordering for j in range(DG._k)] + \
-             [m._r[i,j]   for i in DG._ordering for j in range(DG._k)] + \
-             [m._y[u,v,j] for u,v in DG.edges   for j in range(DG._k)]
-
-    if m._objective == 'avepp':
-        m._stored_solutions = [(0, solval, solind)]
-    else:
-        m.xmodel.addmipsol(solval, solind, name='mysol')

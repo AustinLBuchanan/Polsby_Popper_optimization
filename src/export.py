@@ -4,7 +4,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import pathlib
 
-datapath = pathlib.Path("../districting-data-2020/")
+datapath = pathlib.Path("C:/districting-data-2020/")
 
 def export_to_png(DG, labeling, png_filename):
     
