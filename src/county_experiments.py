@@ -4,7 +4,7 @@ import subprocess
 states = ['AR','ID','IA','KS','ME','MS','MT','NE','NM','WV']
 levels = ['county']
 objectives = ['invpp','avepp','schwartzb']
-contiguitys = ['shir']
+contiguitys = ['lcut']
 
 for state in states:
     for level in levels:
