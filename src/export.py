@@ -51,15 +51,15 @@ def export_to_png(DG, labeling, png_filename, resize_factor=3):
         my_fig.savefig(png_filename)
     return
 
-def export_to_baf(DG, labeling, baf_filename):
+def export_to_csv(DG, labeling, csv_filename):
      
-    print("Exporting to block assignment file (baf) ...")
+    print("Exporting to csv...")
     geoid_to_label = { DG.nodes[i]['GEOID20'] : labeling[i] for i in DG.nodes }
 
     if DG._level == 'vtd':
 
-        # write our block assignment file
-        with open(baf_filename, 'w', newline="") as csvfile: 
+        # write our csv file
+        with open(csv_filename, 'w', newline="") as csvfile: 
             csvwriter = csv.writer(csvfile) 
             
             # for each row of readfile:
@@ -73,7 +73,7 @@ def export_to_baf(DG, labeling, baf_filename):
     readfile = pandas.read_csv(datapath / (DG._state + '_CD.baf'))
 
     # then write our block assignment file
-    with open(baf_filename, 'w', newline="") as csvfile: 
+    with open(csv_filename, 'w', newline="") as csvfile: 
         csvwriter = csv.writer(csvfile) 
         
         # for each row of readfile:

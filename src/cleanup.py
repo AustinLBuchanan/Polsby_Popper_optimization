@@ -49,7 +49,7 @@ def mip_local_search(G, initial_plan, h=1, max_iterations=10, minority=None, pre
 # h = # hops permitted
 #
 def best_neighboring_plan(G, initial_plan, h=1, minority=None, preserve_splits=False, 
-                          time_limit=3600, verbose=False, multidistrict_sizes=None):
+                          time_limit=600, verbose=False, multidistrict_sizes=None):
 
     k = len(initial_plan)
     if multidistrict_sizes is None:
