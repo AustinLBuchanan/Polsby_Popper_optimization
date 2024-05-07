@@ -74,6 +74,7 @@ def recursive_bipartition_heuristic(G, gingles_districts=list()):
             clusters.append(cluster2)
             sizes.append(size2)
             
-    print(f"With recursive partitioning, drew {len(districts)} districts.")
-    print("Number of multidistricts =",num_multidistricts)
+    print(f"After recursive partitioning, we have {len(districts)} districts.")
+    if num_multidistricts > 0:
+        print(f"This includes {num_multidistricts} multidistricts.")
     return districts
