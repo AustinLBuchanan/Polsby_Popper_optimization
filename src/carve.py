@@ -5,7 +5,7 @@ from coarsen import subgraph, graph_coarsen_by_county
 # Repeatedly carve majority-minority districts from the graph, as able.
 #
 def carving_heuristic(G, minority, complement_contiguity='cut', complement_compactness=False, deviation_penalty=0.0, 
-                      mvap_lower=0.5, mvap_upper=1.0, mvap_excess_penalty=0.001, polsby_popper_cutoff=0.2, verbose=False):
+                      mvap_lower=0.5, mvap_upper=1.0, mvap_excess_penalty=0.001, polsby_popper_cutoff=0.125, verbose=False):
     
     districts = list()
     unassigned_nodes = list(G.nodes)
@@ -59,7 +59,7 @@ def carving_heuristic(G, minority, complement_contiguity='cut', complement_compa
 # same idea, but without county coarsening/decomposition
 #
 def carving_heuristic_simple(G, minority, complement_contiguity='cut', complement_compactness=False, deviation_penalty=0.0, 
-                             mvap_lower=0.5, mvap_upper=1.0, mvap_excess_penalty=0.001, polsby_popper_cutoff=0.2, verbose=False,
+                             mvap_lower=0.5, mvap_upper=1.0, mvap_excess_penalty=0.001, polsby_popper_cutoff=0.125, verbose=False,
                              split_counties_limit=2):
     
     districts = list()
@@ -110,7 +110,7 @@ def fips_edge(G, i, j):
     fj = G.nodes[j]['GEOID20'][0:5]
     return ( min(fi, fj), max(fi, fj) )
 
-# by default, sort from smallest pop to largest pop
+# by default, sort counties (or adjacent county pairs) from smallest pop to largest pop
 def get_ordering(G, num):
     assert num <= 2, "get_ordering(G, num) is only defined for num <= 2"
     if num==0:
