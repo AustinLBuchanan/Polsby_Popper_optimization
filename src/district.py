@@ -8,7 +8,7 @@ from mip_contiguity import find_fischetti_separator
 
 def build_single_district_mip(DG, objective='polsby_popper', contiguity=None, root=None, verbose=True,
                               split_counties_limit=None, deviation_penalty=0.0,
-                              minority=None, mvap_lower=0.5, mvap_upper=1.0, mvap_excess_penalty=0.001, 
+                              minority=None, mvap_lower=0.5, mvap_upper=1.0, mvap_excess_penalty=0.0, 
                               complement_contiguity=None, complement_balance=False, complement_compactness_penalty=0.0):
     
     # sanity check the inputs
