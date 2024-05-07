@@ -2,7 +2,7 @@ import math
 from read import read_graph_from_json
 from number_of_districts import number_of_districts
 from gingles import gingles
-from export import export_to_baf
+from export import export_to_csv
 
 filepath = 'C:\\districting-data-2020\\'
 states = ['LA', 'MS', 'AL', 'GA']
@@ -42,5 +42,5 @@ for state in states:
         G._level = level
         csv_filename = "gingles_" + state + "_" + district_type + ".csv"
         labeling = { i : j for j in range(len(districts)) for i in districts[j] }
-        export_to_baf(G, labeling, csv_filename)
+        export_to_csv(G, labeling, csv_filename)
                 
