@@ -11,12 +11,16 @@ def fips_support(G, districts):
                 fs[f].append(j)
     return fs
 
-def number_of_counties_split(G, districts):
+def number_of_counties_split(G, districts, verbose=False):
     fs = fips_support(G, districts)
+    if verbose:
+        print("\nCounties split (by fips code):", [ f for f in fs.keys() if len(fs[f]) > 1 ])
     return sum( 1 for f in fs.keys() if len(fs[f]) > 1 )
     
-def number_of_county_splits(G, districts):
+def number_of_county_splits(G, districts, verbose=False):
     fs = fips_support(G, districts)
+    if verbose:
+        print("County splits (by fips code):", { f : len(fs[f])-1  for f in fs.keys() if len(fs[f]) > 1 })
     return sum( ( len(fs[f]) - 1 ) for f in fs.keys() )
     
 def polsby_popper(G, district, label):
@@ -25,30 +29,39 @@ def polsby_popper(G, district, label):
     perim += sum( G.nodes[i]['boundary_perim'] for i in district if G.nodes[i]['boundary_node'] ) 
     return 4 * math.pi * area / ( perim * perim )
 
-def average_polsby_popper(G, districts):
+def average_polsby_popper(G, districts, verbose=False):
     label = { i : j for j in range(len(districts)) for i in districts[j] }
+    if verbose:
+        print("\nDistrict Polsby-Popper scores:")
+        for p in range(len(districts)):
+            print(p, round(polsby_popper(G, districts[p], label),4) )
     return sum( polsby_popper(G, district, label) for district in districts ) / len(districts) 
 
-def number_of_gingles_districts(G, districts, minority):
+def number_of_gingles_districts(G, districts, minority, verbose=False):
     codes = get_census_codes(minority)
     for i in G.nodes:
         G.nodes[i]['VAP'] = G.nodes[i]['P0030001']
         G.nodes[i]['MVAP'] = sum( G.nodes[i][code] for code in codes )
     gingles_count = 0
-    for district in districts:
+    if verbose:
+        print(f"\nDistrict {minority} percentages:")
+    for p in range(len(districts)):
+        district = districts[p]
         vap = sum( G.nodes[i]['VAP'] for i in district )
         mvap = sum( G.nodes[i]['MVAP'] for i in district )
         if mvap >= 0.5 * vap:
             gingles_count += 1
+        if verbose:
+            flag = '***' if mvap >= 0.5 * vap else ''
+            print(p, round(100*mvap/vap,2), flag)
     return gingles_count
 
-def report_metrics(G, districts, minority):
-    gingles = number_of_gingles_districts(G, districts, minority)
-    s1 = number_of_counties_split(G, districts)
-    s2 = number_of_county_splits(G, districts)
-    avepp = round( average_polsby_popper(G, districts), 4)
-    print(f"  {gingles} majority-{minority} districts")
-    print(f"  {s1} counties split a total of {s2} times")
-    print("  average Polsby-Popper score of",avepp)
+def report_metrics(G, districts, minority=None, verbose=False):
+    if minority is not None:
+        gingles = number_of_gingles_districts(G, districts, minority, verbose=verbose)
+        print(f"-> {gingles} majority-{minority} districts")
+    print(f"-> {number_of_counties_split(G, districts, verbose=verbose)} counties split a total of {number_of_county_splits(G, districts, verbose=verbose)} times")
+    avepp = round( average_polsby_popper(G, districts, verbose=verbose), 4)
+    print("-> average Polsby-Popper score of",avepp)
     return
     
