@@ -89,7 +89,7 @@ def best_neighboring_plan(G, initial_plan, h=1, minority=None, preserve_splits=F
     # minority VAP >= 50% for Gingles districts
     if minority is not None:
         try:
-            u = nx.arbitrary_element(G.nodes)
+            u = nx.utils.arbitrary_element(G.nodes)
             G.nodes[u]['MVAP']
             G.nodes[u]['VAP']
         except:
