@@ -4,7 +4,7 @@ import gurobipy as gp
 from gurobipy import GRB
 from census_codes import get_census_codes
 from mip_contiguity import find_fischetti_separator 
-from coarsen import hop_coarsen
+from coarsen import hop_coarsen, distance_to_vertex_set
 
 # In the spirit of "ILP-based local search for graph partitioning"
 #    by A Henzinger, A Noe, C Schulz - Journal of Experimental Algorithmics, 2020
@@ -15,6 +15,7 @@ def mip_local_search(G, initial_plan, h=1, max_iterations=10, minority=None, pre
     
     print(f"Applying MIP-based local search to improve the MIP warm start (hop parameter: {h})...")
     new_plan = initial_plan.copy()
+    new_obj = 100 # arbitrary "big" number
     grb_time = 0
     
     # sometimes, the initial_plan contains multidistricts (e.g., with twice the requisite population).
@@ -35,6 +36,7 @@ def mip_local_search(G, initial_plan, h=1, max_iterations=10, minority=None, pre
     for iteration in range(1,max_iterations+1):
         
         old_plan = new_plan.copy()
+        old_obj = new_obj
         ( GH, coarsen_partition, coarsened_old_plan ) = hop_coarsen(G, old_plan, h, preserve_splits )
         GH._k = G._k
         GH._L = G._L
@@ -51,7 +53,9 @@ def mip_local_search(G, initial_plan, h=1, max_iterations=10, minority=None, pre
         
         grb_time += runtime
         print(iteration,'\t','{0:.8f}'.format(new_obj),'\t','{0:.2f}'.format(runtime))
-        if new_plan == old_plan:
+        
+        # because of floating point numerical issues, objectives may not be monotone, especially near the end
+        if new_obj >= old_obj - 1e-8 or new_plan == old_plan:
             break
     
     return new_plan
@@ -271,35 +275,6 @@ def best_neighboring_plan(G, initial_plan, h=1, minority=None, preserve_splits=F
     # double check that plan is feasible
     plan = [ [ i for i in AG.predecessors(j) if m._x[i,j].x > 0.5 ] for j in range(k) ]
     return (plan, m.objVal, m.runtime)
-
-
-# dist[i] = the distance from node i to the set of nodes S
-# dist[i]=0 if i in S
-# dist[i]=1 if i in N(S)
-# dist[i]=2 if i in N^2(S)
-# ...
-# dist[i]=None if no path from i to S
-#
-def distance_to_vertex_set(G, S, cutoff=None):
-    if cutoff==None:
-        cutoff = G.number_of_nodes()
-    
-    dist = dict()
-    touched = { i : False for i in G.nodes }
-    child = S
-    for s in S:
-        touched[s] = True
-    
-    for h in range(1+cutoff):
-        parent = child
-        child = list()
-        for p in parent:
-            dist[p] = h
-            for n in G.neighbors(p):
-                if not touched[n]:
-                    child.append(n)
-                    touched[n] = True
-    return dist
 
 
 def AG_contiguity_callback(m, where):

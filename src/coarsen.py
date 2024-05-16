@@ -1,5 +1,4 @@
 import networkx as nx
-from cleanup import distance_to_vertex_set
 
 #########################################################
 # Generic coarsen function merges each part into a node.
@@ -168,6 +167,35 @@ def hop_coarsen(G, plan, h, by_county, verbose=False):
     
     assert CG.number_of_nodes() == coarsened_nodes
     return ( CG, partition, coarsened_plan )
+
+
+# dist[i] = the distance from node i to the set of nodes S
+# dist[i]=0 if i in S
+# dist[i]=1 if i in N(S)
+# dist[i]=2 if i in N^2(S)
+# ...
+# dist[i]=None if no path from i to S
+#
+def distance_to_vertex_set(G, S, cutoff=None):
+    if cutoff==None:
+        cutoff = G.number_of_nodes()
+    
+    dist = dict()
+    touched = { i : False for i in G.nodes }
+    child = S
+    for s in S:
+        touched[s] = True
+    
+    for h in range(1+cutoff):
+        parent = child
+        child = list()
+        for p in parent:
+            dist[p] = h
+            for n in G.neighbors(p):
+                if not touched[n]:
+                    child.append(n)
+                    touched[n] = True
+    return dist
 
 
 # Returns subgraph of DG induced by nodes.
