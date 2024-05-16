@@ -4,7 +4,7 @@ import gurobipy as gp
 from gurobipy import GRB
 from census_codes import get_census_codes
 from mip_contiguity import find_fischetti_separator 
-
+from coarsen import hop_coarsen
 
 # In the spirit of "ILP-based local search for graph partitioning"
 #    by A Henzinger, A Noe, C Schulz - Journal of Experimental Algorithmics, 2020
@@ -33,9 +33,22 @@ def mip_local_search(G, initial_plan, h=1, max_iterations=10, minority=None, pre
     # LOCAL SEARCH
     print("iter \t\t obj \t\t time")
     for iteration in range(1,max_iterations+1):
+        
         old_plan = new_plan.copy()
-        (new_plan, new_obj, runtime) = best_neighboring_plan(G, old_plan, h=h, minority=minority, preserve_splits=preserve_splits,
-                                                             multidistrict_sizes=multidistrict_sizes,time_limit=time_limit, verbose=verbose)
+        ( GH, coarsen_partition, coarsened_old_plan ) = hop_coarsen(G, old_plan, h, preserve_splits )
+        GH._k = G._k
+        GH._L = G._L
+        GH._U = G._U
+        
+        (coarsened_new_plan, new_obj, runtime) = best_neighboring_plan(GH, coarsened_old_plan, h=h, minority=minority, preserve_splits=preserve_splits, multidistrict_sizes=multidistrict_sizes,time_limit=time_limit, verbose=verbose)
+        
+        new_plan = list()
+        for coarsened_district in coarsened_new_plan:
+            district = list()
+            for i in coarsened_district:
+                district += coarsen_partition[i]
+            new_plan.append(district)
+        
         grb_time += runtime
         print(iteration,'\t','{0:.8f}'.format(new_obj),'\t','{0:.2f}'.format(runtime))
         if new_plan == old_plan:
