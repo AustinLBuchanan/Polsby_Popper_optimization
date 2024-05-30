@@ -1,14 +1,16 @@
 from number_of_districts import number_of_districts
-from gerrychain import Graph
+from read import read_graph_from_json
 from datetime import date
+import time
 import networkx as nx
 import gurobipy as gp
 import os, sys, math, csv
 import export, ordering, hess
-import mip, mip_contiguity, mip_objective, mip_fixing, mip_local_search
+import mip, mip_contiguity, mip_objective, mip_fixing
+from cleanup import mip_local_search
 import pathlib
 
-datapath = pathlib.Path("C:/districting-data-2020/")
+datapath = pathlib.Path("C:/districting-data-2020-reprojection/")
 
 def main():
     
@@ -34,7 +36,7 @@ def main():
     summary_csv = export_filepath + 'summary.csv'
     my_fieldnames = ['state','level','objective','contiguity'] # arguments
     my_fieldnames += ['k','L','U','n','m'] # params
-    my_fieldnames += ['B_size', 'B_time', 'hess_time', 'ls_obj', 'ls_time'] # max B and heuristic info
+    my_fieldnames += ['B_size', 'B_time', 'hess_time', 'ls_time'] # max B and heuristic info
     my_fieldnames += ['MIP_obj','MIP_bound','MIP_time', 'MIP_status', 'MIP_nodes', 'callbacks', 'lazy_cuts'] # MIP info
     
     # if results directory and csv file doesn't exist yet, then create them
@@ -50,7 +52,7 @@ def main():
     
     # Read graph G and identify number of districts k.
     filename = state + '_' + level + '.json'
-    G = Graph.from_json( datapath / filename )
+    G = read_graph_from_json( datapath / filename )
     if not nx.is_connected(G):
         print("ERROR: graph is disconnected. Aborting...")
         return
@@ -128,30 +130,28 @@ def main():
     result['hess_time'] = '{0:.2f}'.format(hess_time)
 
     ls_labeling = None
-    ls_obj = None
 
     # MIP-based local search
     if hess_labeling:
-        # Improve solution quality with MIP-based local search,
-        #   but first add one-root-per-district constraints!
-        #   They are implied by partitioning orbitope EF, but EF hasn't been added yet.
-        root_constrs = m.addConstrs( gp.quicksum( m._r[i,j] for i in DG.nodes ) == 1 for j in range(DG._k) )
-        
+        (G._k, G._L, G._U ) = (DG._k, DG._L, DG._U)
         ls_labeling = hess_labeling
         ls_time = 0
         max_radius = 2
         for radius in range(1,max_radius+1):
             if ls_labeling is None:
                 ls_labeling = hess_labeling
-            (ls_labeling, ls_obj, this_ls_time) = mip_local_search.local_search(m, DG, ls_labeling, radius)
+            initial_plan = [ [ i for i in DG.nodes if ls_labeling[i]==j ] for j in range(DG._k) ]
+
+            this_ls_start = time.time()
+            new_plan = mip_local_search(G, initial_plan, h=radius, minority=None, preserve_splits=False) # since already county graph
+            this_ls_time = time.time() - this_ls_start
+            
+            ls_labeling = { i : j for j in range(DG._k) for i in new_plan[j] }
             ls_time += this_ls_time
 
-        m.remove(root_constrs)
         result['ls_time'] = '{0:.2f}'.format(ls_time)
-        result['ls_obj'] = ls_obj
     else:
         result['ls_time'] = 'n/a'
-        result['ls_obj'] = 'n/a'
     
     # Symmetry handling (partitioning orbitope)
     mip.add_partitioning_orbitope_constraints(m, DG)
@@ -193,7 +193,7 @@ def main():
         export.export_to_png(DG, labeling, export_filename + '.png')
 
         # export districting plan to block assignment file (csv)
-        export.export_to_baf(DG, labeling, export_filename + '.baf')
+        export.export_to_csv(DG, labeling, export_filename + '.csv')
     
     export.append_dict_as_row( summary_csv, result, my_fieldnames )
     
@@ -211,7 +211,7 @@ def args_okay(args):
     objective = args[2]
     contiguity = args[3]
 
-    state_args = [ key for key in congressional_districts_2020.keys() ]
+    state_args = { state for (state,district_type) in number_of_districts.keys() }
     level_args = [ 'county', 'tract' ]
     objective_args = [ 'cut', 'perim', 'invpp', 'avepp', 'aveppbe', 'schwartzb' ]
     contiguity_args = [ 'scf', 'lcut', 'shir' ] 
